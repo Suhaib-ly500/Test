@@ -1,0 +1,114 @@
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+const { config } = require('../../infrastructure/config');
+const tokenRepository = require('../../infrastructure/persistence/repositories/tokenRepository');
+const vendorRepository = require('../../infrastructure/persistence/repositories/vendorRepository');
+const authService = require('../../application/services/authService');
+
+const validPageTokens = new Set();
+
+function generatePageToken() {
+  const token = crypto.randomBytes(32).toString('hex');
+  validPageTokens.add(token);
+  return token;
+}
+
+function verifyPageToken(token) {
+  return token && validPageTokens.has(token);
+}
+
+setInterval(() => { validPageTokens.clear(); }, 3600000);
+
+setInterval(() => { authService.cleanupExpired(); }, 3600000);
+
+const htmlTokenMiddleware = (req, res, next) => {
+  let servePath = req.path;
+  if (servePath === '/' || servePath === '') servePath = '/index.html';
+  if (servePath.endsWith('.html')) {
+    // Path traversal protection: reject '..' segments and anything escaping the root
+    const parts = servePath.split(/[\\/]/);
+    if (parts.some(p => p === '..')) {
+      return res.status(404).send('Not found');
+    }
+    const resolved = path.resolve(config.root, '.' + servePath);
+    const rootResolved = path.resolve(config.root);
+    if (resolved !== rootResolved && !resolved.startsWith(rootResolved + path.sep)) {
+      return res.status(404).send('Not found');
+    }
+    if (!fs.existsSync(resolved)) return next();
+    const token = generatePageToken();
+    const content = fs.readFileSync(resolved, 'utf8');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(content.replace('</head>', '<meta name="csrf-token" content="' + token + '">\n</head>'));
+  }
+  next();
+};
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { success: false, message: 'محاولات كثيرة جداً. انتظر 15 دقيقة.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  message: { success: false, message: 'طلبات كثيرة جداً. حاول لاحقاً.' }
+});
+
+const setupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: { success: false, message: 'طلبات كثيرة جداً. حاول لاحقاً.' }
+});
+
+const strictPostLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'طلبات كثيرة جداً. حاول لاحقاً.' }
+});
+
+function requireAdmin(req, res, next) {
+  const auth = req.headers['authorization'];
+  if (!auth) return res.status(401).json({ success: false, message: 'غير مصرح' });
+  if (auth.startsWith('Bearer ')) {
+    const token = auth.slice(7);
+    if (!token || /^\d+$/.test(token)) return res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
+    const session = tokenRepository.findAdminSession(token);
+    if (session && !authService.isExpired(session)) {
+      req.adminId = session.vendor_id;
+      return next();
+    }
+  }
+  res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
+}
+
+function requireVendor(req, res, next) {
+  const token = req.headers['x-vendor-id'] || req.headers['x-auth-token'];
+  if (!token) return res.status(401).json({ success: false, message: 'غير مصرح - يرجى تسجيل الدخول' });
+  if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
+  const session = tokenRepository.findSession(token);
+  if (!session || authService.isExpired(session)) {
+    if (session) { try { tokenRepository.deleteByToken(token); } catch (e) {} }
+    return res.status(401).json({ success: false, message: 'توكن غير صالح. يرجى تسجيل الدخول مرة أخرى' });
+  }
+  const vendor = vendorRepository.findActiveById(session.vendor_id);
+  if (vendor) { req.vendorId = vendor.id; return next(); }
+  res.status(403).json({ success: false, message: 'حسابك غير نشط' });
+}
+
+function requirePublicToken(req, res, next) {
+  const token = req.headers['x-csrf-token'];
+  if (!token || !verifyPageToken(token)) {
+    return res.status(403).json({ success: false, message: 'طلب غير مصرح - يرجى تحديث الصفحة' });
+  }
+  next();
+}
+
+module.exports = { loginLimiter, apiLimiter, setupLimiter, strictPostLimiter, requireAdmin, requireVendor, requirePublicToken, htmlTokenMiddleware };

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <link rel="stylesheet" href="/css/privacy.css">
+
+    <link rel="icon" href="/logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سياسة الخصوصية | ماتريكس برو</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { scroll-behavior: smooth; }
+        body { font-family: 'Rubik', sans-serif; background: #F8FAFC; color: #0F172A; }
+        .font-cairo { font-family: 'Cairo', sans-serif; }
+        .container-card { max-width: 800px; margin: 0 auto; background: white; border-radius: 24px; box-shadow: 0 4px 24px rgba(15,23,42,0.06); border: 1px solid #F1F5F9; overflow: hidden; }
+        .section-title { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 18px; color: #0F172A; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+        .section-title .num { width: 28px; height: 28px; background: #059669; color: white; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+        .section-card { background: #F8FAFC; border-radius: 16px; padding: 24px; margin-bottom: 16px; border: 1px solid #F1F5F9; }
+        .section-card p, .section-card li { font-size: 14px; line-height: 1.8; color: #475569; }
+        .section-card ul { list-style: none; padding-right: 0; }
+        .section-card ul li::before { content: "•"; color: #059669; font-weight: bold; margin-left: 8px; }
+        .section-card ul li { margin-bottom: 6px; }
+        .highlight-box { background: #ECFDF5; border: 1px solid #D1FAE5; border-radius: 12px; padding: 16px; margin: 12px 0; font-size: 13px; color: #065F46; }
+        .highlight-box strong { color: #047857; }
+        @media (max-width: 640px) { .container-card { border-radius: 16px; } .section-card { padding: 16px; border-radius: 12px; } }
+
+        /* ===== استجابة شاملة لجميع الشاشات ===== */
+        html { -webkit-text-size-adjust: 100%; }
+        body { overflow-x: hidden; }
+        .container-card { width: 100%; }
+        .section-card, .highlight-box { word-break: break-word; }
+        img { max-width: 100%; height: auto; }
+        /* على الهواتف */
+        @media (max-width: 640px) {
+            body { padding: 0; }
+            .header .max-w-5xl { padding: 0 16px; }
+            .py-10.md\:py-16 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+            .px-8.md\:px-10 { padding-left: 1.25rem; padding-right: 1.25rem; }
+            .p-6.md\:p-10 { padding: 1.25rem; }
+            h1 { font-size: 1.5rem !important; }
+        }
+        /* شاشات ضخمة */
+        @media (min-width: 1280px) {
+            .max-w-6xl { max-width: 60rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="bg-white border-b border-deep-50 sticky top-0 z-10" style="backdrop-filter: blur(12px);">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2.5 no-underline">
+                <img src="/logo.png" class="w-9 h-9 rounded-xl shadow-md shadow-deep/10 object-cover">
+                <span class="text-xl font-cairo font-bold text-deep">ماتريكس برو</span>
+            </a>
+            <a href="/" class="text-sm text-brand hover:text-brand-600 font-medium smooth-transition">&larr; العودة إلى السوق</a>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 md:py-16">
+        <div class="container-card">
+            <!-- Title -->
+            <div class="bg-gradient-to-l from-deep to-deep-800 px-8 py-8 md:px-10 text-white">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg border border-white/10">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-cairo font-black">سياسة الخصوصية</h1>
+                        <p class="text-white/60 text-sm mt-1">آخر تحديث: يوليو 2026</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 md:p-10" id="privacy-content">
+                <div class="text-center py-12">
+                    <div class="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p class="text-sm text-deep-400">جاري تحميل المحتوى...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+        <script src="/js/privacy-1.js"></script>
+
+</body>
+</html>

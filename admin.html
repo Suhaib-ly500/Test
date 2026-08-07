@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <link rel="stylesheet" href="/css/admin.css">
+
+    <link rel="icon" href="/logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | ماتريكس برو</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { font-family: 'Rubik', sans-serif; }
+        .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .glass-dark { background: rgba(17,24,39,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+
+        /* تصميم الشريط الجانبي */
+        .sidebar-link {
+            border-right: 3px solid transparent;
+            border-radius: 0 14px 14px 0;
+            margin-left: 14px;
+            padding: 11px 18px;
+            font-weight: 500;
+            color: #64748B;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .sidebar-link::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(99,102,241,0.04));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .sidebar-link:hover::before { opacity: 1; }
+        .sidebar-link:hover:not(.active) { color: #1E293B; }
+        .sidebar-link.active {
+            color: #2563eb;
+            border-right-color: #2563eb;
+            font-weight: 700;
+            background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(99,102,241,0.06));
+        }
+        .sidebar-link.active svg { color: #2563eb; }
+        .sidebar-link svg { transition: all 0.3s; }
+        .sidebar-link:hover svg:not(.active) { transform: scale(1.1); }
+
+        /* بطاقات الإحصائيات الأنيقة */
+        .stat-card {
+            background: white;
+            border-radius: 22px;
+            padding: 22px;
+            border: 1px solid rgba(0,0,0,0.04);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(59,130,246,0.04), transparent 70%);
+            transition: all 0.6s;
+            opacity: 0;
+        }
+        .stat-card:hover::after { opacity: 1; transform: scale(1.5); }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
+        .stat-card-icon { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .stat-card:hover .stat-card-icon { transform: scale(1.15) rotate(-6deg); }
+        .stat-glow { box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 8px 32px rgba(0,0,0,0.06); }
+
+        /* الجداول الفاخرة */
+        .table-hover thead th {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .table-hover tbody tr { transition: all 0.2s; }
+        .table-hover tbody tr:hover { background: rgba(37,99,235,0.04) !important; transform: scale(1.002); }
+        .table-hover tbody tr:nth-child(even) { background: rgba(0,0,0,0.012); }
+        .table-hover tbody tr:nth-child(even):hover { background: rgba(37,99,235,0.06) !important; }
+        .table-hover tbody td { padding: 14px 16px; }
+
+        /* بطاقات التقارير العائمة */
+        .report-card-hover {
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .report-card-hover:hover {
+            transform: translateY(-4px) scale(1.005);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+            border-color: rgba(37,99,235,0.25);
+        }
+        .chart-bar { height: 8px; border-radius: 99px; background: linear-gradient(90deg, #3b82f6, #6366f1); transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .bar-month { height: 30px; border-radius: 10px; transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1); min-width: 6px; }
+
+        /* الدونات */
+        .donut-chart { position: relative; width: 150px; height: 150px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .donut-chart::before { content: ''; position: absolute; inset: 20px; border-radius: 50%; background: white; }
+        .donut-label { position: relative; z-index: 1; text-align: center; }
+
+        /* عناصر متحركة محسنة */
+        .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+        @keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes widen { from { width: 0 !important; } }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        @keyframes float-delayed { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes twinkle { 0%,100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 1; transform: scale(1.3); } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out both; }
+        .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .animate-width { animation: widen 1.2s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-delayed { animation: float-delayed 8s ease-in-out infinite; }
+        .animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
+        .animate-spin-slow { animation: spin-slow 3s linear infinite; }
+
+        /* أزرار أنيقة */
+        .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 12px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+        .btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; border-radius: 14px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(37,99,235,0.3) !important; }
+        .btn-primary:active { transform: translateY(-1px); }
+        .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover { transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .card-hover:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 16px 48px rgba(0,0,0,0.08); }
+
+        /* أدوات */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .chart-tooltip { position: relative; }
+        .chart-tooltip:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 4px 10px; border-radius: 8px; font-size: 11px; white-space: nowrap; z-index: 10; }
+
+        /* particles for login */
+        .login-particle { position: absolute; border-radius: 50%; pointer-events: none; }
+
+        /* حالة التحميل */
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+
+        /* تدرج خلفية المحتوى */
+        .content-gradient { background: linear-gradient(180deg, #f8fafc 0%, #f0f2f5 100%); }
+
+        @media print { .no-print { display: none !important; } body { background: white !important; } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* ===== الوضع المظلم ===== */
+        html.dark body { background: #0B1120 !important; color: #E2E8F0 !important; }
+        html.dark .sidebar-link { color: #94A3B8 !important; }
+        html.dark .sidebar-link:hover:not(.active) { color: #E2E8F0 !important; background: rgba(255,255,255,0.05) !important; }
+        html.dark .sidebar-link.active { background: rgba(59,130,246,0.1) !important; color: #60A5FA !important; }
+        html.dark #main-sidebar { background: #0F172A !important; border-color: #1E293B !important; box-shadow: none !important; }
+        html.dark #main-sidebar h1 { color: #F1F5F9 !important; }
+        html.dark #main-sidebar .text-gray-400 { color: #64748B !important; }
+        html.dark .stat-card { background: #1E293B !important; border-color: #334155 !important; }
+        html.dark .stat-card:hover { box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important; }
+        html.dark .stat-card .text-gray-400 { color: #94A3B8 !important; }
+        html.dark .glass { background: rgba(30,41,59,0.8) !important; }
+        html.dark .table-wrap { background: #1E293B !important; border-color: #334155 !important; }
+        html.dark .table-wrap th { background: #0F172A !important; color: #94A3B8 !important; border-color: #334155 !important; }
+        html.dark .table-wrap td { border-color: #334155 !important; color: #E2E8F0 !important; }
+        html.dark .table-wrap tr:hover td { background: rgba(255,255,255,0.03) !important; }
+        html.dark .btn-secondary { background: #334155 !important; color: #E2E8F0 !important; border-color: #475569 !important; }
+        html.dark .bg-white { background: #1E293B !important; }
+        html.dark .bg-gray-50 { background: #0F172A !important; }
+        html.dark .text-gray-500 { color: #94A3B8 !important; }
+        html.dark .text-gray-600 { color: #CBD5E1 !important; }
+        html.dark .text-gray-700 { color: #E2E8F0 !important; }
+        html.dark .text-gray-800 { color: #F1F5F9 !important; }
+        html.dark .text-gray-900 { color: #F8FAFC !important; }
+        html.dark input, html.dark select, html.dark textarea { background: #0F172A !important; border-color: #334155 !important; color: #E2E8F0 !important; }
+        html.dark input::placeholder { color: #64748B !important; }
+        html.dark .border-gray-100 { border-color: #334155 !important; }
+        html.dark .border-gray-200 { border-color: #475569 !important; }
+        html.dark .border-gray-300 { border-color: #64748B !important; }
+        html.dark .shadow-sm, html.dark .shadow, html.dark .shadow-md, html.dark .shadow-lg { box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important; }
+        html.dark .content-gradient { background: linear-gradient(180deg, #0B1120 0%, #0F172A 100%) !important; }
+        html.dark .btn-subscribe { background: #059669 !important; }
+        html.dark .glass-dark { background: rgba(15,23,42,0.9) !important; }
+        html.dark .sidebar-link svg { color: #64748B !important; }
+        html.dark .sidebar-link.active svg { color: #60A5FA !important; }
+        html.dark .text-black { color: #F1F5F9 !important; }
+        html.dark .text-blue-200 { color: #93C5FD !important; }
+        html.dark #page-title { color: #F1F5F9 !important; }
+        html.dark .bg-white\/70, html.dark .bg-white\/80 { background: rgba(15,23,42,0.85) !important; }
+        html.dark .from-gray-50 { background: #0B1120 !important; }
+
+        /* ===================== استجابة شاملة لجميع الشاشات ===================== */
+        html { -webkit-text-size-adjust: 100%; }
+        body { overflow-x: hidden; }
+
+        /* على الهواتف، نعرض الشريط الجانبي فوق المحتوى */
+        @media (max-width: 640px) {
+            .content-gradient, main { padding-top: 0.5rem; }
+            .stat-card { padding: 16px; }
+            .stat-card .text-2xl { font-size: 1.4rem; }
+            .chart-tooltip::after { white-space: normal; width: max-content; max-width: 200px; }
+            #page-title { font-size: 1rem !important; max-width: 140px; }
+            h2, h3 { word-break: break-word; }
+            .filter-row, .action-row { display: flex; flex-direction: column; align-items: stretch; gap: 0.6rem; }
+            input, select, textarea { max-width: 100%; font-size: 16px !important; }
+            .table-wrap { overflow-x: auto; }
+            .table-hover tbody td { padding: 12px 10px !important; font-size: 13px; }
+            .table-hover thead th { padding: 12px 10px !important; font-size: 11px; }
+            /* منع أي فائض أفقي */
+            * { box-sizing: border-box; }
+        }
+
+        /* شاشات صغيرة جداً */
+        @media (max-width: 374px) {
+            .stat-card { padding: 14px; }
+            .grid-cols-2 { grid-template-columns: 1fr 1fr; }
+            .btn-primary { padding: 9px 14px; font-size: 12px; }
+            #page-title { max-width: 100px; }
+        }
+
+        /* هواتف 475px وأصغر */
+        @media (max-width: 479px) {
+            .grid-cols-2, .xs\:grid-cols-2 { grid-template-columns: 1fr !important; }
+            .flex-col\:sm\:flex-row { flex-direction: column; }
+            main .flex.items-center.justify-between { flex-wrap: wrap; gap: 0.5rem; }
+        }
+
+        /* لوحي شاشة متوسط */
+        @media (max-width: 1024px) {
+            .lg\:grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* شاشات ضخمة */
+        @media (min-width: 1700px) {
+            main > * { max-width: 1600px; margin-left: auto; margin-right: auto; }
+        }
+
+        /* عند الطباعة */
+        @media print {
+            #main-sidebar, #sidebar-overlay, #sidebar-toggle, .no-print { display: none !important; }
+            main { overflow: visible !important; }
+            body { background: white !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#F0F2F5] text-[#1D1D1F] antialiased">
+
+    <!-- نافذة تسجيل الدخول -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 30%, #1e40af 60%, #3730a3 100%); overflow: hidden;">
+        <!-- خلفية متحركة -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="login-particle animate-float" style="width:300px;height:300px;background:radial-gradient(circle,rgba(59,130,246,0.15),transparent);top:-80px;right:-80px;"></div>
+            <div class="login-particle animate-float-delayed" style="width:200px;height:200px;background:radial-gradient(circle,rgba(139,92,246,0.12),transparent);bottom:20px;left:-40px;"></div>
+            <div class="login-particle animate-twinkle" style="width:6px;height:6px;background:rgba(255,255,255,0.4);top:20%;right:15%;"></div>
+            <div class="login-particle animate-twinkle" style="width:4px;height:4px;background:rgba(255,255,255,0.3);top:40%;right:75%;animation-delay:1s;"></div>
+            <div class="login-particle animate-twinkle" style="width:5px;height:5px;background:rgba(255,255,255,0.35);top:60%;right:20%;animation-delay:0.5s;"></div>
+            <div class="login-particle animate-twinkle" style="width:3px;height:3px;background:rgba(255,255,255,0.25);top:80%;right:60%;animation-delay:1.5s;"></div>
+            <div class="login-particle animate-twinkle" style="width:7px;height:7px;background:rgba(255,255,255,0.2);top:15%;right:50%;animation-delay:2s;"></div>
+            <!-- شبكة متدرجة -->
+            <svg class="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+                <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="0.5"/></pattern></defs>
+                <rect width="100%" height="100%" fill="url(#grid)"/>
+            </svg>
+        </div>
+
+        <div class="relative bg-white/95 backdrop-blur-xl rounded-3xl p-6 sm:p-10 w-full max-w-sm mx-3 sm:mx-4 shadow-2xl border border-white/20 animate-fade-in z-10">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg shadow-blue-600/30">
+                    <img src="/logo.png" class="w-16 h-16 rounded-2xl object-cover">
+                </div>
+                <h2 class="text-2xl font-bold text-black">لوحة التحكم</h2>
+                <p class="text-gray-500 text-sm mt-1">ماتريكس برو للإدارة والمتابعة</p>
+            </div>
+            <form onsubmit="event.preventDefault(); adminLogin()" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1.5">اسم المستخدم</label>
+                    <input type="text" id="admin-username" autocomplete="username" required class="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-600 text-sm outline-none" placeholder="admin">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1.5">كلمة المرور</label>
+                    <input type="password" id="admin-password" autocomplete="current-password" required class="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-600 text-sm outline-none" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-l from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-semibold py-3.5 rounded-2xl shadow-lg shadow-blue-600/20 text-sm">دخول</button>
+            </form>
+            <p id="login-error" class="text-red-500 text-xs text-center mt-4 hidden"></p>
+        </div>
+    </div>
+
+    <!-- لوحة التحكم -->
+    <div id="dashboard" class="hidden flex h-screen overflow-hidden">
+
+        <!-- طبقة التعتيم للقائمة الجانبية في الموبايل -->
+        <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm hidden lg:hidden" onclick="toggleSidebar()"></div>
+
+        <!-- الشريط الجانبي المصمم -->
+        <aside id="main-sidebar" class="w-64 bg-gradient-to-b from-white via-white to-gray-50/80 border-l border-gray-200/60 flex flex-col shrink-0 no-scrollbar shadow-lg shadow-gray-200/20 fixed lg:static inset-y-0 right-0 z-40 transform translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out">
+            <div class="p-5 border-b border-gray-100/80">
+                <div class="flex items-center gap-3">
+                    <img src="/logo.png" class="w-10 h-10 rounded-2xl shadow-lg shadow-blue-600/30 animate-float object-cover">
+                    <div class="flex-1">
+                        <h1 class="font-bold text-black text-lg tracking-tight">ماتريكس برو</h1>
+                        <p class="text-[10px] text-gray-400 tracking-wide">لوحة الإدارة</p>
+                    </div>
+                    <button onclick="toggleSidebar()" class="lg:hidden p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg smooth-transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-3 flex-1 space-y-0.5 overflow-y-auto">
+                <div class="text-[10px] text-gray-400 font-semibold px-4 pb-2 pt-1 tracking-widest uppercase">القائمة الرئيسية</div>
+                <button onclick="showSection('overview')" class="sidebar-link active w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    <span>نظرة عامة</span>
+                </button>
+                <button onclick="showSection('vendors')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path></svg>
+                    <span>إدارة الحسابات</span>
+                    <span id="vendors-badge" class="mr-auto bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="showSection('orders')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    <span>المشتريات والمبيعات</span>
+                    <span id="orders-badge" class="mr-auto bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="showSection('reports')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>التقارير</span>
+                </button>
+                <div class="text-[10px] text-gray-400 font-semibold px-4 pb-2 pt-5 tracking-widest uppercase">التخصيص</div>
+                <button onclick="showSection('custom-assets')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>إضافات مخصصة</span>
+                </button>
+                <div class="text-[10px] text-gray-400 font-semibold px-4 pb-2 pt-5 tracking-widest uppercase">الإعدادات والمحتوى</div>
+                <button onclick="showSection('featured')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                    <span>العروض المميزة</span>
+                </button>
+                <button onclick="showSection('views')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <span>المشاهدات</span>
+                </button>
+                <button onclick="showSection('activity')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>سجل النشاطات</span>
+                </button>
+                <button onclick="showSection('delete-requests')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span>طلبات الحذف</span>
+                    <span id="delete-req-badge" class="mr-auto bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button onclick="showSection('contact-vendors')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    <span>تواصل مع المزودين</span>
+                </button>
+                <button onclick="showSection('complaints')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>الشكاوى والاسترجاع</span>
+                    <span id="complaint-badge" class="mr-auto bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button onclick="showSection('pages')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>إدارة المحتوى</span>
+                </button>
+                <div class="text-[10px] text-gray-400 font-semibold px-4 pb-2 pt-5 tracking-widest uppercase">المكافآت والنقاط</div>
+                <button onclick="showSection('points-system')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>نظام النقاط</span>
+                </button>
+                <div class="text-[10px] text-gray-400 font-semibold px-4 pb-2 pt-5 tracking-widest uppercase">الإدارة</div>
+                <button onclick="showSection('admin-management')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>المشرفين</span>
+                </button>
+                <div class="text-[10px] text-gray-400 font-semibold px-4 pb-2 pt-5 tracking-widest uppercase">الأرباح والإعدادات</div>
+                <button onclick="showSection('settings')" class="sidebar-link w-full text-right">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>الإعدادات</span>
+                </button>
+            </div>
+            <div class="p-3 border-t border-gray-100/80 space-y-1">
+                <button onclick="toggleDarkMode()" id="darkToggle" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <span id="darkText">الوضع المظلم</span>
+                </button>
+                <button onclick="adminLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-600">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    تسجيل خروج
+                </button>
+            </div>
+        </aside>
+        
+        <!-- المحتوى الرئيسي -->
+        <main class="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-[#F0F2F5]">
+            <!-- شريط علوي أنيق -->
+            <div class="sticky top-0 z-20 bg-white/70 backdrop-blur-xl border-b border-gray-200/60 px-3 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between no-print shadow-sm shadow-gray-200/10">
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <button id="sidebar-toggle" onclick="toggleSidebar()" class="lg:hidden p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl smooth-transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <img src="/logo.png" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-md shadow-blue-600/20 lg:hidden shrink-0 object-cover">
+                    <h2 class="text-sm sm:text-lg lg:text-xl font-bold text-black truncate max-w-[120px] sm:max-w-none" id="page-title">نظرة عامة</h2>
+                    <span class="text-[11px] text-gray-400 bg-gray-100/80 px-3 py-1 rounded-full font-medium hidden sm:inline-block shrink-0" id="update-time"></span>
+                </div>
+                <div class="flex items-center gap-1.5 sm:gap-3">
+                    <button onclick="loadAllData()" class="bg-white/80 border border-gray-200 hover:bg-white hover:border-blue-200 text-gray-600 hover:text-blue-600 p-2 sm:px-3.5 sm:py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 smooth-transition shadow-sm" title="تحديث">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span class="hidden sm:inline">تحديث</span>
+                    </button>
+                    <div class="items-center gap-2.5 text-xs text-gray-500 bg-white/80 border border-gray-100 px-3 py-2 rounded-xl shadow-sm hidden sm:flex">
+                        <svg class="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span id="live-time" class="font-medium"></span>
+                    </div>
+                    <img src="/logo.png" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-md shadow-blue-600/20 hidden sm:block shrink-0 object-cover">
+                </div>
+            </div>
+            <div class="p-3 sm:p-5 lg:p-7 content-gradient min-h-[calc(100vh-73px)]">
+
+                <!-- ===== نظرة عامة ===== -->
+                <section id="section-overview" class="section-content">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6 sm:mb-8" id="stats-grid">
+                        <div class="stat-card bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 relative overflow-hidden group">
+                            <div class="absolute -top-6 -right-6 w-20 h-20 bg-blue-50 rounded-full opacity-60 group-hover:scale-150 group-hover:opacity-100 transition-all duration-700"></div>
+                            <div class="absolute -bottom-6 -left-6 w-16 h-16 bg-blue-50/30 rounded-full opacity-40"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 stat-card-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>
+                                <div><p class="text-2xl font-bold text-black" id="stat-vendors">0</p><p class="text-xs text-gray-400">إجمالي الحسابات</p></div>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group">
+                            <div class="absolute -top-6 -right-6 w-20 h-20 bg-emerald-50 rounded-full opacity-60 group-hover:scale-150 group-hover:opacity-100 transition-all duration-700"></div>
+                            <div class="absolute -bottom-6 -left-6 w-16 h-16 bg-emerald-50/30 rounded-full opacity-40"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-11 h-11 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 stat-card-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                                <div><p class="text-2xl font-bold text-black" id="stat-active">0</p><p class="text-xs text-gray-400">نشط</p></div>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group">
+                            <div class="absolute -top-6 -right-6 w-20 h-20 bg-amber-50 rounded-full opacity-60 group-hover:scale-150 group-hover:opacity-100 transition-all duration-700"></div>
+                            <div class="absolute -bottom-6 -left-6 w-16 h-16 bg-amber-50/30 rounded-full opacity-40"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-11 h-11 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-amber-500/20 stat-card-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
+                                <div><p class="text-2xl font-bold text-black" id="stat-orders">0</p><p class="text-xs text-gray-400">إجمالي الطلبات</p></div>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group">
+                            <div class="absolute -top-6 -right-6 w-20 h-20 bg-purple-50 rounded-full opacity-60 group-hover:scale-150 group-hover:opacity-100 transition-all duration-700"></div>
+                            <div class="absolute -bottom-6 -left-6 w-16 h-16 bg-purple-50/30 rounded-full opacity-40"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-11 h-11 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-500/20 stat-card-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                                <div><p class="text-2xl font-bold text-black" id="stat-revenue">0</p><p class="text-xs text-gray-400">الإيرادات</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
+                        <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 lg:col-span-2 card-hover">
+                            <div class="flex items-start gap-3 mb-4">
+                                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-sm shadow-md shrink-0">👋</div>
+                                <div>
+                                    <h3 class="font-bold text-black text-base sm:text-lg">مرحباً بك في لوحة التحكم</h3>
+                                    <p class="text-gray-500 text-sm">من هنا يمكنك إدارة حسابات المزودين، متابعة المشتريات والمبيعات، وطباعة التقارير.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl p-5 sm:p-6 text-white shadow-lg shadow-blue-600/20 card-hover relative overflow-hidden">
+                            <div class="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full"></div>
+                            <div class="absolute -bottom-4 -left-4 w-20 h-20 bg-white/5 rounded-full"></div>
+                            <div class="relative">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <p class="text-xs text-blue-200 font-medium">إجمالي المشاهدات</p>
+                                </div>
+                                <p class="text-3xl font-bold mt-1" id="stat-views">0</p>
+                                <p class="text-xs text-blue-200 mt-2">مشاهدة على جميع الاشتراكات</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                        <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 card-hover">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center text-white text-xs font-bold">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/></svg>
+                                    </div>
+                                    <h3 class="font-bold text-black">المزودون النشطون</h3>
+                                </div>
+                                <span class="text-xs text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full">أحدث المزودين</span>
+                            </div>
+                            <div id="top-vendors-mini" class="space-y-3"></div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center text-white text-xs font-bold">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    </div>
+                                    <h3 class="font-bold text-black">الطلبات المعلقة</h3>
+                                </div>
+                                <span class="text-xs text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full">تحتاج متابعة</span>
+                            </div>
+                            <div id="pending-orders-mini" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== إدارة الحسابات ===== -->
+                <section id="section-vendors" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <h2 class="text-xl sm:text-2xl font-bold text-black">إدارة الحسابات</h2>
+                                <span id="vendors-total-badge" class="bg-blue-50 text-blue-600 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
+                            </div>
+                            <p class="text-gray-500 text-sm mt-1">عرض وإدارة حسابات المزودين وتفاصيلهم الكاملة</p>
+                        </div>
+                        <button onclick="loadVendors()" class="btn-primary text-gray-600 bg-white border border-gray-200 hover:border-blue-200 hover:text-blue-600 shrink-0" style="box-shadow: none;">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            <span class="hidden xs:inline">تحديث</span>
+                        </button>
+                    </div>
+                    <!-- طلبات الانتظار -->
+                    <div id="pending-vendors-section" class="mb-6 hidden">
+                        <h3 class="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse"></span>
+                            طلبات تسجيل جديدة
+                            <span id="pending-count" class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                        </h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" id="pending-vendors-list"></div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm table-hover" style="min-width: 900px;">
+                                <thead>
+                                    <tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">#</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الصورة</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">اسم المستخدم</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">كلمة المرور</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الاسم الكامل</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الاسم الشهرة</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">العمر</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الهاتف</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">البريد</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">المدينة</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الحالة</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">التاريخ</th>
+                                        <th class="text-center p-4 font-medium whitespace-nowrap">إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vendors-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- ===== المشتريات والمبيعات ===== -->
+                <section id="section-orders" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <h2 class="text-xl sm:text-2xl font-bold text-black">المشتريات والمبيعات</h2>
+                                <span id="orders-total-badge" class="bg-amber-50 text-amber-600 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
+                                <span id="awaiting-badge" class="bg-blue-50 text-blue-600 text-xs font-bold px-2.5 py-0.5 rounded-full hidden">0 قيد التحقق</span>
+                            </div>
+                            <p class="text-gray-500 text-sm mt-1">إدارة ومتابعة جميع الطلبات المقدمة عبر المنصة</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="document.getElementById('order-modal').classList.remove('hidden')" class="btn-primary text-white" style="background: #2563EB; box-shadow: 0 4px 15px rgba(37,99,235,0.2);">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                <span class="hidden xs:inline">إضافة طلب</span>
+                                <span class="xs:hidden">إضافة</span>
+                            </button>
+                            <button onclick="loadOrders()" class="btn-primary text-gray-600 bg-white border border-gray-200 hover:border-blue-200 hover:text-blue-600" style="box-shadow: none;">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span class="hidden xs:inline">تحديث</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm table-hover" style="min-width: 700px;">
+                                <thead>
+                                    <tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">#</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الزبون</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الهاتف</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الاشتراك</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">المزود</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">المبلغ</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">الحالة</th>
+                                        <th class="text-right p-4 font-medium whitespace-nowrap">التاريخ</th>
+                                        <th class="text-center p-4 font-medium whitespace-nowrap">إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== التقارير والإحصائيات ===== -->
+                <section id="section-reports" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">التقارير والإحصائيات</h2>
+                            <p class="text-gray-500 text-sm mt-1">تحليل بصري شامل لأداء المنصة</p>
+                        </div>
+                        <button onclick="window.print()" class="btn-primary text-white shrink-0" style="background: #0F172A; box-shadow: 0 4px 15px rgba(15,23,42,0.2);">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            <span class="hidden xs:inline">طباعة التقرير</span>
+                        </button>
+                    </div>
+
+                    <!-- صف البطاقات الإحصائية -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-6" id="report-mini-stats"></div>
+
+                    <!-- الرسم الدائري + ملخص -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-1 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">توزيع الحسابات</h3>
+                            </div>
+                            <div id="donut-chart-container" class="flex flex-col items-center">
+                                <div class="donut-chart mb-3" id="donut-chart-el" style="background: conic-gradient(#10b981 0deg, #f59e0b 0deg, #ef4444 0deg, #e5e7eb 0deg)">
+                                    <div class="donut-label">
+                                        <p class="text-2xl font-bold text-black" id="donut-total">0</p>
+                                        <p class="text-[10px] text-gray-400">إجمالي</p>
+                                    </div>
+                                </div>
+                                <div class="w-full space-y-2 text-xs" id="donut-legend"></div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-2 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">الطلبات الشهرية</h3>
+                            </div>
+                            <div id="monthly-chart-container" class="space-y-2.5">
+                                <p class="text-gray-400 text-sm text-center py-8">لا توجد بيانات كافية</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ملخص + آخر الطلبات -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">ملخص المنصة</h3>
+                            </div>
+                            <div class="space-y-1" id="report-summary"></div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">آخر الطلبات</h3>
+                            </div>
+                            <div class="space-y-2" id="report-recent-orders"></div>
+                        </div>
+                    </div>
+
+                    <!-- أفضل المزودين + الأكثر مشاهدة -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">أفضل المزودين</h3>
+                            </div>
+                            <div id="top-vendors-report" class="space-y-3"></div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-yellow-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">الأكثر مشاهدة</h3>
+                            </div>
+                            <div id="top-categories-report" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- النشاطات -->
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                        <div class="flex items-center gap-2 mb-5">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white text-xs font-bold">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <h3 class="font-bold text-black">آخر النشاطات</h3>
+                        </div>
+                        <div class="space-y-1" id="report-recent-activity"></div>
+                    </div>
+                </section>
+
+                <!-- ===== سجل النشاطات ===== -->
+                <section id="section-activity" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">سجل النشاطات</h2>
+                            <p class="text-gray-500 text-sm mt-1">جميع نشاطات المزودين على المنصة مع إمكانية التصفية</p>
+                        </div>
+                        <button onclick="loadAdminActivityLog()" class="btn-primary text-white shrink-0" style="background: #2563EB; box-shadow: 0 4px 15px rgba(37,99,235,0.2);">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            بحث
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-4">
+                        <div class="flex flex-wrap gap-2 sm:gap-3 items-end">
+                            <div class="w-full sm:flex-1 min-w-[120px] sm:min-w-[150px]">
+                                <label class="text-xs text-gray-400 mb-1.5 block font-medium">اسم المزود</label>
+                                <input type="text" id="filter-activity-vendor" placeholder="بحث باسم المزود" class="w-full px-3 py-2.5 bg-gray-50 rounded-xl border-0 text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            </div>
+                            <div class="flex-1 min-w-[100px] sm:min-w-[130px]">
+                                <label class="text-xs text-gray-400 mb-1.5 block font-medium">من تاريخ</label>
+                                <input type="date" id="filter-activity-date-from" class="w-full px-3 py-2.5 bg-gray-50 rounded-xl border-0 text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            </div>
+                            <div class="flex-1 min-w-[100px] sm:min-w-[130px]">
+                                <label class="text-xs text-gray-400 mb-1.5 block font-medium">إلى تاريخ</label>
+                                <input type="date" id="filter-activity-date-to" class="w-full px-3 py-2.5 bg-gray-50 rounded-xl border-0 text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            </div>
+                            <div class="flex-1 min-w-[100px] sm:min-w-[130px]">
+                                <label class="text-xs text-gray-400 mb-1.5 block font-medium">نوع النشاط</label>
+                                <select id="filter-activity-action" class="w-full px-3 py-2.5 bg-gray-50 rounded-xl border-0 text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                                    <option value="">الكل</option>
+                                    <option value="إضافة">إضافة</option>
+                                    <option value="تعديل">تعديل</option>
+                                    <option value="حذف">حذف</option>
+                                    <option value="طلب">طلب</option>
+                                    <option value="تسجيل">تسجيل</option>
+                                    <option value="قبول">قبول / رفض</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="overflow-x-auto max-h-[70vh] overflow-y-auto" id="admin-activity-list"></div>
+                    </div>
+                </section>
+
+                <!-- ===== طلبات حذف الحسابات ===== -->
+                <section id="section-delete-requests" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">طلبات حذف الحسابات</h2>
+                            <p class="text-gray-500 text-sm mt-1">المزودون الذين طلبوا حذف حساباتهم مع إمكانية الموافقة أو الرفض</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-x-auto">
+                        <table class="w-full text-sm table-hover" style="min-width: 600px;">
+                            <thead>
+                                <tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">#</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">الاسم</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">البريد</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">الهاتف</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">السبب</th>
+                                    <th class="text-center p-4 font-medium whitespace-nowrap">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="delete-requests-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ===== الشكاوى وطلبات الاسترجاع ===== -->
+                <section id="section-complaints" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">الشكاوى وطلبات الاسترجاع</h2>
+                            <p class="text-gray-500 text-sm mt-1">إدارة شكاوى العملاء وقبول أو رفض طلبات الاسترجاع</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-x-auto">
+                        <table class="w-full text-sm table-hover" style="min-width: 700px;">
+                            <thead>
+                                <tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">#</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">العميل</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">المزود</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">الاشتراك</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">السبب</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">الحالة</th>
+                                    <th class="text-right p-4 font-medium whitespace-nowrap">التاريخ</th>
+                                    <th class="text-center p-4 font-medium whitespace-nowrap">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="complaints-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ===== تواصل مع المزودين ===== -->
+                <section id="section-contact-vendors" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">تواصل مع المزودين</h2>
+                            <p class="text-gray-500 text-sm mt-1">بيانات جميع المزودين مع إمكانية التواصل عبر واتساب بضغطة زر</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="contact-vendors-grid"></div>
+                </section>
+
+                <!-- ===== الإعدادات ===== -->
+                <section id="section-settings" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">الإعدادات</h2>
+                            <p class="text-gray-500 text-sm mt-1">إعدادات المنصة ونسب العمولة وأدوات الصيانة</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- نسبة العمولة العامة -->
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">نسبة العمولة العامة</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-4">هذه النسبة تُخصم من كل طلب لصالح المنصة. يمكنك تخصيص نسبة مختلفة لكل مزود من قسم إدارة الحسابات.</p>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <input type="number" id="global-commission-input" min="0" max="100" step="0.5" class="w-20 sm:w-24 px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-blue-600 text-sm outline-none text-center font-bold text-lg" placeholder="0">
+                                <span class="text-lg font-bold text-gray-400">%</span>
+                                <button onclick="saveGlobalCommission()" class="btn-primary text-white shrink-0" style="background: #2563EB; box-shadow: 0 4px 15px rgba(37,99,235,0.2);">حفظ</button>
+                            </div>
+                            <p id="global-commission-msg" class="text-xs text-green-600 mt-3 hidden"></p>
+                        </div>
+                        <!-- ملخص العمولات -->
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">ملخص العمولات</h3>
+                            </div>
+                            <div class="space-y-3" id="commission-summary">
+                                <div class="flex justify-between py-2 border-b border-gray-50"><span class="text-gray-500">النسبة العامة</span><span class="font-bold" id="cs-global-rate">0%</span></div>
+                                <div class="flex justify-between py-2 border-b border-gray-50"><span class="text-gray-500">إجمالي العمولات المحصلة</span><span class="font-bold text-emerald-600" id="cs-total-commission">0 د.ل</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- أدوات التنظيف والتصفير -->
+                    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-100 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">تنظيف الإيرادات</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-4">حذف جميع سجلات الطلبات والعمولات مع الاحتفاظ بالمزودين والاشتراكات.</p>
+                            <button onclick="clearRevenue()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl text-sm font-medium shadow-md flex items-center justify-center gap-2 smooth-transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                تنظيف الإيرادات
+                            </button>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-red-100 report-card-hover">
+                            <div class="flex items-center gap-2 mb-5">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white text-xs font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                                </div>
+                                <h3 class="font-bold text-black">تصفير اللوحة بالكامل</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-4">حذف جميع البيانات (مزودين، اشتراكات، أصناف، طلبات، عمولات، سجلات) وإعادة اللوحة إلى حالتها الأولية.</p>
+                            <button onclick="resetAllData()" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl text-sm font-medium shadow-md flex items-center justify-center gap-2 smooth-transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                                تصفير اللوحة بالكامل
+                            </button>
+                        </div>
+                    </div>
+                </section>
+                <!-- ===== إدارة المحتوى (الشروط والخصوصية) ===== -->
+                <section id="section-pages" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">إدارة المحتوى</h2>
+                            <p class="text-gray-500 text-sm mt-1">تعديل الشروط والأحكام وسياسة الخصوصية</p>
+                        </div>
+                    </div>
+                    <!-- أزرار التبديل -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <button id="tab-terms" onclick="switchPageTab('terms')" class="px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-blue-600 text-white shadow-sm smooth-transition">الشروط والأحكام</button>
+                        <button id="tab-privacy" onclick="switchPageTab('privacy')" class="px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 smooth-transition">سياسة الخصوصية</button>
+                    </div>
+                    <!-- محرر المحتوى -->
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                            <h3 class="font-bold text-black text-base sm:text-lg" id="page-editor-title">الشروط والأحكام</h3>
+                            <button onclick="savePageContent()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium shadow-md flex items-center gap-2 smooth-transition shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                حفظ المحتوى
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-3">يمكنك استخدام HTML لتنسيق المحتوى (وسوم h2, p, ul, li, strong, إلخ).</p>
+                        <textarea id="page-content-editor" class="w-full h-96 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-600 text-sm outline-none font-mono transition-all" dir="ltr"></textarea>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-xs text-gray-400">آخر تحديث:</span>
+                            <span id="page-updated-at" class="text-xs text-gray-500 font-medium">—</span>
+                        </div>
+                    </div>
+                </section>
+                <!-- ===== العروض المميزة ===== -->
+                <section id="section-featured" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">العروض المميزة</h2>
+                            <p class="text-gray-500 text-sm mt-1">إدارة الاشتراكات المميزة وتحديد الأسعار الخاصة</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 report-card-hover">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm table-hover" style="min-width: 600px;">
+                                <thead><tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                    <th class="text-right p-3 font-medium whitespace-nowrap">الاشتراك</th>
+                                    <th class="text-right p-3 font-medium whitespace-nowrap">المزود</th>
+                                    <th class="text-right p-3 font-medium whitespace-nowrap">الصنف</th>
+                                    <th class="text-right p-3 font-medium whitespace-nowrap">السعر</th>
+                                    <th class="text-right p-3 font-medium whitespace-nowrap">السعر المميز</th>
+                                    <th class="text-right p-3 font-medium whitespace-nowrap">مميز</th>
+                                    <th class="text-right p-3 font-medium whitespace-nowrap">إجراءات</th>
+                                </tr></thead>
+                                <tbody id="featured-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-views" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">سجل المشاهدات</h2>
+                            <p class="text-gray-500 text-sm mt-1">مشاهدة الاشتراكات من الزبائن</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                            <p class="text-xs text-gray-400 mb-1">مشاهدات اليوم</p>
+                            <p class="text-2xl font-bold text-black" id="views-today-count">0</p>
+                        </div>
+                        <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                            <p class="text-xs text-gray-400 mb-1">زوار فريدون اليوم</p>
+                            <p class="text-2xl font-bold text-black" id="views-unique-count">0</p>
+                        </div>
+                        <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                            <p class="text-xs text-gray-400 mb-1">إجمالي المشاهدات</p>
+                            <p class="text-2xl font-bold text-black" id="views-total-count">0</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                            <h3 class="text-sm font-bold text-black mb-3">جميع المشاهدات</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm table-hover" style="min-width: 500px;">
+                                    <thead><tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">#</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">الاشتراك</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">المزود</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">IP الزائر</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">التاريخ</th>
+                                    </tr></thead>
+                                    <tbody id="views-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                            <h3 class="text-sm font-bold text-black mb-3">الأكثر مشاهدة</h3>
+                            <div class="space-y-3" id="views-top-list"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-points-system" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">نظام النقاط والمكافآت</h2>
+                            <p class="text-gray-500 text-sm mt-1">إدارة النقاط والمكافآت للزبائن والمزودين</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4">نقاط الزبائن</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">نقاط لكل طلب مكتمل</label>
+                                    <input type="number" id="ps-customer-points-per-order" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-amber-500 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">قيمة الخصم لكل نقطة (د.ل)</label>
+                                    <input type="number" id="ps-customer-point-discount" step="0.1" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-amber-500 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">أقصى خصم (%)</label>
+                                    <input type="number" id="ps-customer-max-discount-percent" step="1" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-amber-500 text-sm outline-none">
+                                </div>
+                                <button onclick="saveAllCustomerSettings()" class="w-full bg-gradient-to-l from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold py-3 rounded-2xl shadow-lg shadow-amber-500/20 text-sm">حفظ إعدادات الزبائن</button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4">نقاط المزودين</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">الهدف اليومي (د.ل)</label>
+                                    <input type="number" id="ps-vendor-daily-target" step="1" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">نقاط عند تحقيق الهدف</label>
+                                    <input type="number" id="ps-vendor-points-per-target" step="1" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">تخفيض العمولة لكل نقطة (%)</label>
+                                    <input type="number" id="ps-vendor-commission-reduction-per-point" step="0.5" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">مدة التخفيض (ساعة)</label>
+                                    <input type="number" id="ps-vendor-reduction-hours" step="1" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none">
+                                </div>
+                                <button onclick="saveAllVendorSettings()" class="w-full bg-gradient-to-l from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold py-3 rounded-2xl shadow-lg shadow-emerald-500/20 text-sm">حفظ إعدادات المزودين</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4">العروض الخاصة للزبائن</h3>
+                            <form onsubmit="event.preventDefault(); addCustomerOffer()" class="flex gap-3 mb-4">
+                                <select id="ps-offer-subscription" class="flex-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-purple-500 text-sm outline-none"></select>
+                                <input type="number" id="ps-offer-discount" placeholder="نسبة الخصم %" step="1" class="w-28 px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-purple-500 text-sm outline-none">
+                                <button type="submit" class="px-5 py-3 bg-gradient-to-l from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/20 text-sm">إضافة</button>
+                            </form>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm table-hover">
+                                    <thead><tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">الاشتراك</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">المزود</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">الخصم</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">حذف</th>
+                                    </tr></thead>
+                                    <tbody id="ps-offers-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4">إضافة نقاط يدوية</h3>
+                            <form onsubmit="event.preventDefault(); addVendorPointsManual()" class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">اختر المزود</label>
+                                    <select id="ps-manual-vendor" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-500 text-sm outline-none"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">عدد النقاط</label>
+                                    <input type="number" id="ps-manual-points" min="1" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-500 text-sm outline-none" placeholder="مثال: 50">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">السبب (اختياري)</label>
+                                    <input type="text" id="ps-manual-reason" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-500 text-sm outline-none" placeholder="مثال: مكافأة تميز">
+                                </div>
+                                <button type="submit" class="w-full bg-gradient-to-l from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 rounded-2xl shadow-lg shadow-blue-500/20 text-sm">إضافة النقاط</button>
+                            </form>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4">ملخص النقاط</h3>
+                            <h4 class="text-sm font-bold text-gray-600 mb-2">نقاط الزبائن</h4>
+                            <div class="overflow-x-auto mb-6">
+                                <table class="w-full text-sm table-hover">
+                                    <thead><tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">رقم الهاتف</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">الرصيد</th>
+                                    </tr></thead>
+                                    <tbody id="ps-customer-points-table-body"></tbody>
+                                </table>
+                            </div>
+                            <h4 class="text-sm font-bold text-gray-600 mb-2">نقاط المزودين</h4>
+                            <div class="overflow-x-auto mb-4">
+                                <table class="w-full text-sm table-hover">
+                                    <thead><tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">المزود</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">الرصيد</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">مبيعات اليوم</th>
+                                    </tr></thead>
+                                    <tbody id="ps-vendor-points-table-body"></tbody>
+                                </table>
+                            </div>
+                            <h4 class="text-sm font-bold text-gray-600 mb-2">التخفيضات النشطة</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm table-hover">
+                                    <thead><tr class="border-b border-gray-100 text-gray-400 text-xs bg-gray-50/50">
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">المزود</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">التخفيض</th>
+                                        <th class="text-right p-3 font-medium whitespace-nowrap">ينتهي</th>
+                                    </tr></thead>
+                                    <tbody id="ps-reductions-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-custom-assets" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">إضافات مخصصة</h2>
+                            <p class="text-gray-500 text-sm mt-1">أضف CSS, JS, أو HTML مخصص ليتم تطبيقه على السوق مباشرة</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4">CSS مخصص</h3>
+                            <p class="text-xs text-gray-400 mb-2">أضف أنماط CSS لتعديل واجهة السوق (بدون &lt;style&gt;)</p>
+                            <textarea id="ca-css" rows="10" oninput="validateCustomAsset('ca-css', 'css')" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-amber-500 text-sm outline-none font-mono" placeholder="/* اكتب CSS هنا */"></textarea>
+                            <div id="ca-css-hint" class="text-xs mt-1 hidden"></div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4">JS مخصص</h3>
+                            <p class="text-xs text-gray-400 mb-2">أضف أكواد JavaScript (بدون &lt;script&gt;)</p>
+                            <textarea id="ca-js" rows="10" oninput="validateCustomAsset('ca-js', 'js')" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-amber-500 text-sm outline-none font-mono" placeholder="// اكتب JavaScript هنا"></textarea>
+                            <div id="ca-js-hint" class="text-xs mt-1 hidden"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mt-6">
+                        <h3 class="text-lg font-bold text-black mb-4">HTML مخصص</h3>
+                        <p class="text-xs text-gray-400 mb-2">أضف HTML مخصص ليظهر في السوق (يتم إدراجه قبل إغلاق &lt;/body&gt;)</p>
+                        <textarea id="ca-html" rows="6" oninput="validateCustomAsset('ca-html', 'html')" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-amber-500 text-sm outline-none font-mono" placeholder="&lt;!-- اكتب HTML هنا --&gt;"></textarea>
+                        <div id="ca-html-hint" class="text-xs mt-1 hidden"></div>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <button onclick="saveCustomAssets()" class="bg-gradient-to-l from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold py-3 px-10 rounded-2xl shadow-lg shadow-amber-500/20 text-sm">حفظ الإضافات</button>
+                    </div>
+                </section>
+
+                <section id="section-admin-management" class="section-content hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-black">إدارة المشرفين</h2>
+                            <p class="text-gray-500 text-sm mt-1">إنشاء وإدارة حسابات المشرفين على المنصة</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-6 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                                إنشاء مشرف جديد
+                            </h3>
+                            <form onsubmit="event.preventDefault(); createAdmin();" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1.5">اسم المستخدم</label>
+                                    <input type="text" id="admin-username" autocomplete="username" required class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none" placeholder="admin">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1.5">كلمة المرور</label>
+                                    <input type="password" id="admin-password" autocomplete="current-password" required class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none" placeholder="••••••••">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1.5">رقم الهاتف</label>
+                                    <input type="tel" id="admin-phone" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none" placeholder="0912345678">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1.5">البريد الإلكتروني</label>
+                                    <input type="email" id="admin-email" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none" placeholder="admin@example.com">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1.5">المدينة</label>
+                                    <input type="text" id="admin-city" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-emerald-500 text-sm outline-none" placeholder="طرابلس">
+                                </div>
+                                <button type="submit" class="w-full bg-gradient-to-l from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold py-3 rounded-2xl shadow-lg shadow-emerald-500/20 text-sm">إنشاء المشرف</button>
+                            </form>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                قائمة المشرفين
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b border-gray-100">
+                                            <th class="text-right p-3 text-xs font-bold text-gray-400">#</th>
+                                            <th class="text-right p-3 text-xs font-bold text-gray-400">اسم المستخدم</th>
+                                            <th class="text-right p-3 text-xs font-bold text-gray-400">رقم الهاتف</th>
+                                            <th class="text-right p-3 text-xs font-bold text-gray-400">البريد</th>
+                                            <th class="text-right p-3 text-xs font-bold text-gray-400">تاريخ الإنشاء</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admins-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- مودال إضافة طلب -->
+    <div id="order-modal" class="fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl p-5 sm:p-8 w-full max-w-md shadow-2xl animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-sm shadow-md">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-black">إضافة طلب جديد</h3>
+                </div>
+                <button type="button" onclick="document.getElementById('order-modal').classList.add('hidden')" class="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-black smooth-transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form onsubmit="event.preventDefault(); addOrder()" class="space-y-3">
+                <input type="text" id="order-customer" required placeholder="اسم الزبون" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-600 text-sm outline-none">
+                <input type="tel" id="order-phone" placeholder="رقم الهاتف" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-600 text-sm outline-none">
+                <input type="email" id="order-email" placeholder="البريد الإلكتروني" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-600 text-sm outline-none">
+                <input type="text" id="order-subscription" required placeholder="اسم الاشتراك" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-600 text-sm outline-none">
+                <input type="number" id="order-amount" required placeholder="المبلغ" step="0.01" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-600 text-sm outline-none">
+                <select id="order-vendor" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-600 text-sm outline-none"></select>
+                <button type="submit" class="w-full bg-gradient-to-l from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-semibold py-3.5 rounded-2xl shadow-lg shadow-blue-600/20 text-sm mt-2">إضافة الطلب</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- صندوق الحوار التفاعلي الموحد (Custom Dialog) -->
+    <div id="custom-dialog" class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm hidden" onclick="if(event.target===this){document.getElementById('custom-dialog').classList.add('hidden')}">
+        <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden">
+            <div class="p-5 sm:p-6 text-center">
+                <div id="dialog-icon" class="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center text-3xl"></div>
+                <h3 id="dialog-title" class="text-xl font-bold text-black mb-2"></h3>
+                <p id="dialog-message" class="text-sm text-gray-500 mb-6 leading-relaxed"></p>
+                <div id="dialog-input-area" class="hidden mb-4">
+                    <input type="text" id="dialog-input" class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-blue-600 text-sm outline-none" placeholder="">
+                </div>
+                <div id="dialog-buttons" class="flex gap-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تفاصيل المزود المحسّن -->
+    <div id="vendor-detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl animate-slide-up overflow-hidden">
+            <div class="bg-gradient-to-l from-blue-600 via-indigo-600 to-purple-700 px-4 sm:px-6 py-4 sm:py-5 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold">تفاصيل المزود</h3>
+                </div>
+                <button onclick="document.getElementById('vendor-detail-modal').classList.add('hidden')" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white smooth-transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 max-h-[70vh] overflow-y-auto" id="vendor-detail-content"></div>
+        </div>
+    </div>
+
+    <!-- مودال رفض طلب المزود -->
+    <div id="reject-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slide-up overflow-hidden">
+            <div class="bg-gradient-to-l from-red-500 to-rose-600 px-4 sm:px-6 py-4 sm:py-5 text-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold">رفض طلب المزود</h3>
+                        <p class="text-xs text-white/70">سيتم إشعار المزود بسبب الرفض</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4">رفض طلب المزود: <strong id="reject-vendor-name" class="text-black"></strong></p>
+                <textarea id="reject-reason" class="w-full h-28 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-red-500 text-sm outline-none resize-none" placeholder="أدخل سبب الرفض (اختياري)"></textarea>
+                <div class="flex gap-3 mt-5">
+                    <button onclick="confirmReject()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-2xl text-sm shadow-lg shadow-red-500/20 smooth-transition">تأكيد الرفض</button>
+                    <button onclick="document.getElementById('reject-modal').classList.add('hidden')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium py-3 rounded-2xl text-sm smooth-transition">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <script src="/js/admin-1.js"></script>
+
+
+    <!-- معاينة صورة التأكيد -->
+    <div id="screenshot-viewer" class="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm hidden" onclick="if(event.target===this)closeScreenshotViewer()">
+        <div class="relative max-w-2xl w-full max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden animate-slide-up" onclick="event.stopPropagation()">
+            <div class="absolute top-3 left-3 z-10 flex items-center gap-2">
+                <button type="button" onclick="closeScreenshotViewer()" class="w-10 h-10 rounded-xl bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <span id="screenshot-counter" class="text-xs bg-black/40 text-white px-3 py-1.5 rounded-lg font-medium"></span>
+            </div>
+            <button id="screenshot-prev" type="button" onclick="prevScreenshot()" style="display:none" class="absolute top-1/2 -translate-y-1/2 right-3 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button id="screenshot-next" type="button" onclick="nextScreenshot()" style="display:none" class="absolute top-1/2 -translate-y-1/2 left-3 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+            <img id="screenshot-viewer-img" src="" alt="صورة التأكيد" class="w-full h-auto max-h-[90vh] object-contain">
+        </div>
+    </div>
+
+    <!-- Dark Mode -->
+        <script src="/js/admin-2.js"></script>
+
+</body>
+</html>
