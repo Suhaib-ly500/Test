@@ -7,6 +7,8 @@
 
 # Vault
 vault.enc
+vault.enc.bak
+vault.enc.*
 
 # Node
 node_modules/
@@ -21,3 +23,14 @@ uploads/*
 
 # SSL
 ssl/
+
+# Local / build / dev files
+start-server.bat
+Applicaion_System.dll
+*.dll
+dist/
+build.js
+extract-js.js
+obfuscate-js.js
+points-system-plan.md
+*.pdf
