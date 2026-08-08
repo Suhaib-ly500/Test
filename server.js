@@ -29,7 +29,8 @@ app.get('/uploads/:name', async (req, res, next) => {
     const f = await uploadRepository.getFile(req.params.name);
     if (!f) return next();
     res.type(f.mime || 'application/octet-stream');
-    res.send(f.data);
+    const data = Buffer.isBuffer(f.data) ? f.data : Buffer.from(f.data || []);
+    res.send(data);
   } catch (e) {
     next(e);
   }

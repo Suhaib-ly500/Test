@@ -286,12 +286,21 @@ if (!turso) {
 
 // ================= طبقة الوصول الموحّدة (متزامنة/غير متزامنة) =================
 
+function toBufferSafe(v) {
+  if (v == null) return v;
+  if (Buffer.isBuffer(v)) return v;
+  if (v instanceof Uint8Array) return Buffer.from(v);
+  if (v instanceof ArrayBuffer) return Buffer.from(v);
+  if (Array.isArray(v)) return Buffer.from(v);
+  return v;
+}
+
 function rowsToObjects(columns, rows) {
   return rows.map(r => {
     const o = {};
     for (let i = 0; i < columns.length; i++) {
       const v = r[i];
-      o[columns[i]] = v instanceof Uint8Array ? Buffer.from(v) : v;
+      o[columns[i]] = (v instanceof Uint8Array || v instanceof ArrayBuffer || Array.isArray(v)) ? toBufferSafe(v) : v;
     }
     return o;
   });
