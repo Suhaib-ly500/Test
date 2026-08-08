@@ -84,9 +84,13 @@
                         document.getElementById('login-error').textContent = data.message || 'فشل تسجيل الدخول';
                     }
                 }
-            }).catch(() => {
+            }).catch((e) => {
                 document.getElementById('login-error').classList.remove('hidden');
                 document.getElementById('login-error').textContent = 'فشل الاتصال بالسيرفر';
+                console.error('[login] network error:', e && e.message ? e.message : e);
+                if (e && e.message) {
+                    document.getElementById('login-error').textContent += ' (' + e.message + ')';
+                }
             });
         }
 
