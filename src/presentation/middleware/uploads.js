@@ -1,9 +1,7 @@
-const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const { config } = require('../../infrastructure/config');
-
-if (!fs.existsSync(config.uploadsDir)) fs.mkdirSync(config.uploadsDir, { recursive: true });
+const uploadRepository = require('../../infrastructure/persistence/repositories/uploadRepository');
 
 const ALLOWED_MIME = {
   'image/jpeg': 'jpg/jpeg',
@@ -29,76 +27,53 @@ function matchesMagic(buf, mime) {
   return true;
 }
 
-function verifyFileMagic(fullPath, mime) {
-  const fd = fs.openSync(fullPath, 'r');
-  try {
-    const buf = Buffer.alloc(12);
-    const bytesRead = fs.readSync(fd, buf, 0, buf.length, 0);
-    return matchesMagic(buf.slice(0, bytesRead), mime);
-  } finally {
-    fs.closeSync(fd);
-  }
-}
-
 function makeStorage(prefix) {
   return {
     _handleFile(req, file, cb) {
       const ext = path.extname(file.originalname || '').toLowerCase();
       const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const filename = (prefix ? prefix + '-' : '') + unique + ext;
-      const destination = config.uploadsDir;
-      const fullPath = path.join(destination, filename);
-      const tmpPath = fullPath + '.tmp';
-      const out = fs.createWriteStream(tmpPath, { flags: 'wx' });
+      const chunks = [];
       let received = 0;
       let done = false;
       const finish = (err, info) => {
         if (done) return;
         done = true;
-        if (err) {
-          try { out.destroy(); } catch (e) {}
-          fs.unlink(tmpPath, () => {});
-          cb(err);
-        } else {
-          cb(null, info);
-        }
+        if (err) return cb(err);
+        cb(null, info);
       };
       file.stream.on('data', (data) => {
         received += data.length;
         if (received > config.maxFileSize) {
           finish(new Error('حجم الملف أكبر من الحد المسموح'));
+          try { file.stream.destroy(); } catch (e) {}
           return;
         }
-        out.write(data);
+        chunks.push(data);
       });
-      out.on('error', () => finish(new Error('فشل كتابة الملف')));
       file.stream.on('error', () => finish(new Error('فشل قراءة الملف')));
       file.stream.on('end', () => {
-        out.end(() => {
-          try {
-            if (!verifyFileMagic(tmpPath, file.mimetype)) {
-              return finish(new Error('المحتوى ليس صورة صحيحة'));
-            }
-            fs.renameSync(tmpPath, fullPath);
-          } catch (e) {
-            return finish(new Error('المحتوى ليس صورة صحيحة'));
-          }
+        const buf = Buffer.concat(chunks);
+        if (!matchesMagic(buf, file.mimetype)) {
+          return finish(new Error('المحتوى ليس صورة صحيحة'));
+        }
+        uploadRepository.saveFile(filename, file.mimetype, buf).then(() => {
           finish(null, {
             fieldname: file.fieldname,
             originalname: file.originalname,
             encoding: file.encoding,
             mimetype: file.mimetype,
-            destination,
             filename,
-            path: fullPath,
             size: received
           });
-        });
+        }).catch(() => finish(new Error('فشل حفظ الملف')));
       });
     },
     _removeFile(req, file, cb) {
-      const p = path.join(config.uploadsDir, file.filename);
-      fs.unlink(p, () => cb(null));
+      if (file.filename) {
+        uploadRepository.removeFile(file.filename).catch(() => {});
+      }
+      cb(null);
     }
   };
 }

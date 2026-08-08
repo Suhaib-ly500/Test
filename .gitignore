@@ -34,3 +34,4 @@ extract-js.js
 obfuscate-js.js
 points-system-plan.md
 *.pdf
+.env.turso

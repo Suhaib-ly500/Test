@@ -21,7 +21,7 @@ function verifyPageToken(token) {
 
 setInterval(() => { validPageTokens.clear(); }, 3600000);
 
-setInterval(() => { authService.cleanupExpired(); }, 3600000);
+setInterval(() => { authService.cleanupExpired().catch(() => {}); }, 3600000);
 
 const htmlTokenMiddleware = (req, res, next) => {
   let servePath = req.path;
@@ -74,33 +74,41 @@ const strictPostLimiter = rateLimit({
   message: { success: false, message: 'طلبات كثيرة جداً. حاول لاحقاً.' }
 });
 
-function requireAdmin(req, res, next) {
-  const auth = req.headers['authorization'];
-  if (!auth) return res.status(401).json({ success: false, message: 'غير مصرح' });
-  if (auth.startsWith('Bearer ')) {
-    const token = auth.slice(7);
-    if (!token || /^\d+$/.test(token)) return res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
-    const session = tokenRepository.findAdminSession(token);
-    if (session && !authService.isExpired(session)) {
-      req.adminId = session.vendor_id;
-      return next();
+async function requireAdmin(req, res, next) {
+  try {
+    const auth = req.headers['authorization'];
+    if (!auth) return res.status(401).json({ success: false, message: 'غير مصرح' });
+    if (auth.startsWith('Bearer ')) {
+      const token = auth.slice(7);
+      if (!token || /^\d+$/.test(token)) return res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
+      const session = await tokenRepository.findAdminSession(token);
+      if (session && !authService.isExpired(session)) {
+        req.adminId = session.vendor_id;
+        return next();
+      }
     }
+    res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
+  } catch (e) {
+    next(e);
   }
-  res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
 }
 
-function requireVendor(req, res, next) {
-  const token = req.headers['x-vendor-id'] || req.headers['x-auth-token'];
-  if (!token) return res.status(401).json({ success: false, message: 'غير مصرح - يرجى تسجيل الدخول' });
-  if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
-  const session = tokenRepository.findSession(token);
-  if (!session || authService.isExpired(session)) {
-    if (session) { try { tokenRepository.deleteByToken(token); } catch (e) {} }
-    return res.status(401).json({ success: false, message: 'توكن غير صالح. يرجى تسجيل الدخول مرة أخرى' });
+async function requireVendor(req, res, next) {
+  try {
+    const token = req.headers['x-vendor-id'] || req.headers['x-auth-token'];
+    if (!token) return res.status(401).json({ success: false, message: 'غير مصرح - يرجى تسجيل الدخول' });
+    if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(401).json({ success: false, message: 'غير مصرح - توكن غير صالح' });
+    const session = await tokenRepository.findSession(token);
+    if (!session || authService.isExpired(session)) {
+      if (session) { try { await tokenRepository.deleteByToken(token); } catch (e) {} }
+      return res.status(401).json({ success: false, message: 'توكن غير صالح. يرجى تسجيل الدخول مرة أخرى' });
+    }
+    const vendor = await vendorRepository.findActiveById(session.vendor_id);
+    if (vendor) { req.vendorId = vendor.id; return next(); }
+    res.status(403).json({ success: false, message: 'حسابك غير نشط' });
+  } catch (e) {
+    next(e);
   }
-  const vendor = vendorRepository.findActiveById(session.vendor_id);
-  if (vendor) { req.vendorId = vendor.id; return next(); }
-  res.status(403).json({ success: false, message: 'حسابك غير نشط' });
 }
 
 function requirePublicToken(req, res, next) {

@@ -1,35 +1,35 @@
-const { db } = require('../db');
+const { q, qOne, qRun } = require('../db');
 
-function insert(vendorId, token, isAdmin) {
-  return db.prepare('INSERT INTO auth_tokens (vendor_id, token, is_admin) VALUES (?, ?, ?)').run(vendorId, token, isAdmin || 0);
+async function insert(vendorId, token, isAdmin) {
+  return qRun('INSERT INTO auth_tokens (vendor_id, token, is_admin) VALUES (?, ?, ?)', [vendorId, token, isAdmin || 0]);
 }
 
-function deleteByToken(token) {
-  return db.prepare('DELETE FROM auth_tokens WHERE token = ?').run(token);
+async function deleteByToken(token) {
+  return qRun('DELETE FROM auth_tokens WHERE token = ?', [token]);
 }
 
-function findSession(token) {
-  return db.prepare('SELECT vendor_id, is_admin, created_at FROM auth_tokens WHERE token = ?').get(token);
+async function findSession(token) {
+  return qOne('SELECT vendor_id, is_admin, created_at FROM auth_tokens WHERE token = ?', [token]);
 }
 
-function findAdminSession(token) {
-  return db.prepare('SELECT vendor_id, created_at FROM auth_tokens WHERE token = ? AND is_admin = 1').get(token);
+async function findAdminSession(token) {
+  return qOne('SELECT vendor_id, created_at FROM auth_tokens WHERE token = ? AND is_admin = 1', [token]);
 }
 
-function deleteOldForVendor(vendorId) {
-  return db.prepare("DELETE FROM auth_tokens WHERE vendor_id = ? AND created_at < datetime('now', '-30 days')").run(vendorId);
+async function deleteOldForVendor(vendorId) {
+  return qRun("DELETE FROM auth_tokens WHERE vendor_id = ? AND created_at < datetime('now', '-30 days')", [vendorId]);
 }
 
-function deleteExpired() {
-  try { db.prepare("DELETE FROM auth_tokens WHERE created_at < datetime('now', '-30 days')").run(); } catch (e) {}
+async function deleteExpired() {
+  try { await qRun("DELETE FROM auth_tokens WHERE created_at < datetime('now', '-30 days')"); } catch (e) {}
 }
 
-function deleteAll() {
-  return db.prepare('DELETE FROM auth_tokens').run();
+async function deleteAll() {
+  return qRun('DELETE FROM auth_tokens');
 }
 
-function deleteByVendor(vendorId) {
-  return db.prepare('DELETE FROM auth_tokens WHERE vendor_id = ?').run(vendorId);
+async function deleteByVendor(vendorId) {
+  return qRun('DELETE FROM auth_tokens WHERE vendor_id = ?', [vendorId]);
 }
 
 module.exports = { insert, deleteByToken, findSession, findAdminSession, deleteOldForVendor, deleteExpired, deleteAll, deleteByVendor };

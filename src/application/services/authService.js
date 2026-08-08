@@ -13,25 +13,25 @@ function isExpired(sessionOrDate) {
   return (Date.now() - t) > TOKEN_TTL_MS;
 }
 
-function issueToken(vendorId, isAdmin) {
+async function issueToken(vendorId, isAdmin) {
   const token = crypto.randomBytes(32).toString('hex');
-  tokenRepository.insert(vendorId, token, isAdmin ? 1 : 0);
+  await tokenRepository.insert(vendorId, token, isAdmin ? 1 : 0);
   return token;
 }
 
-function logout(token) {
-  if (token) tokenRepository.deleteByToken(token);
+async function logout(token) {
+  if (token) await tokenRepository.deleteByToken(token);
 }
 
-function cleanupExpired() {
-  tokenRepository.deleteExpired();
+async function cleanupExpired() {
+  await tokenRepository.deleteExpired();
 }
 
-function cleanupOldForVendor(vendorId) {
-  tokenRepository.deleteOldForVendor(vendorId);
+async function cleanupOldForVendor(vendorId) {
+  await tokenRepository.deleteOldForVendor(vendorId);
 }
 
-function findSession(token) {
+async function findSession(token) {
   return tokenRepository.findSession(token);
 }
 

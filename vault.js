@@ -84,6 +84,31 @@ const DEFAULT_STRUCTURE = {
 };
 
 function load() {
+  // Env-only mode (hosting without persistent disk, e.g. Render): no vault.enc is created;
+  // all secrets come from environment variables.
+  if (!vaultExists() && process.env.VAULT_PASSWORD && process.env.VAULT_PASSWORD.length >= 8) {
+    if (!process.env.ENCRYPTION_KEY) {
+      console.error('❌ وضع الاستضافة يتطلب ENCRYPTION_KEY في متغيرات البيئة');
+      console.error('   انسخ ENCRYPTION_KEY من الخزنة المحلية (من vault.enc أو ملف .env) واضبطها في إعدادات المنصة');
+      process.exit(1);
+    }
+    return {
+      ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
+      ADMIN_USERNAME: process.env.ADMIN_USERNAME || '',
+      ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
+      ADMIN_PHONE: process.env.ADMIN_PHONE || '',
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL || '',
+      ADMIN_CITY: process.env.ADMIN_CITY || '',
+      ADMIN_PHOTO: process.env.ADMIN_PHOTO || '',
+      DB_PATH: process.env.DB_PATH || 'matrix-pro.db',
+      EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      EMAIL_PORT: process.env.EMAIL_PORT || '587',
+      EMAIL_SECURE: process.env.EMAIL_SECURE || 'false',
+      EMAIL_USER: process.env.EMAIL_USER || '',
+      EMAIL_PASS: process.env.EMAIL_PASS || '',
+      EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || 'ماتريكس برو'
+    };
+  }
   const masterPass = getMasterPassword();
   try {
     let data;
@@ -106,6 +131,10 @@ function load() {
 }
 
 function save(data) {
+  if (!vaultExists() && process.env.VAULT_PASSWORD && process.env.VAULT_PASSWORD.length >= 8) {
+    console.log('⚠️ وضع الاستضافة: الخزنة تُدار عبر متغيرات البيئة، تم تجاهل الحفظ');
+    return;
+  }
   const masterPass = getMasterPassword();
   encryptVault(data, masterPass);
 }

@@ -1,137 +1,140 @@
-const { db } = require('../db');
+const { q, qOne, qRun, qTxn } = require('../db');
 
 // ===== Customer points =====
 
-function getCustomerPoints(phone) {
-  return db.prepare('SELECT points FROM customer_points WHERE phone=?').get(phone);
+async function getCustomerPoints(phone) {
+  return qOne('SELECT points FROM customer_points WHERE phone=?', [phone]);
 }
 
-function createCustomerPoints(phone, points) {
-  return db.prepare('INSERT INTO customer_points (phone, points) VALUES (?, ?)').run(phone, points);
+async function createCustomerPoints(phone, points) {
+  return qRun('INSERT INTO customer_points (phone, points) VALUES (?, ?)', [phone, points]);
 }
 
-function addCustomerPoints(phone, points) {
-  return db.prepare('UPDATE customer_points SET points = points + ? WHERE phone=?').run(points, phone);
+async function addCustomerPoints(phone, points) {
+  return qRun('UPDATE customer_points SET points = points + ? WHERE phone=?', [points, phone]);
 }
 
-function redeemCustomerPoints(phone, points) {
-  return db.prepare('UPDATE customer_points SET points = points - ? WHERE phone=?').run(points, phone);
+async function redeemCustomerPoints(phone, points) {
+  return qRun('UPDATE customer_points SET points = points - ? WHERE phone=?', [points, phone]);
 }
 
-function insertCustomerTxn(phone, points, type, orderId) {
-  return db.prepare('INSERT INTO customer_point_transactions (customer_phone, points, type, order_id) VALUES (?, ?, ?, ?)').run(phone, points, type, orderId === undefined ? null : orderId);
+async function insertCustomerTxn(phone, points, type, orderId) {
+  return qRun('INSERT INTO customer_point_transactions (customer_phone, points, type, order_id) VALUES (?, ?, ?, ?)', [phone, points, type, orderId === undefined ? null : orderId]);
 }
 
-function insertCustomerTxnNoOrder(phone, points, type) {
-  return db.prepare('INSERT INTO customer_point_transactions (customer_phone, points, type) VALUES (?,?,?)').run(phone, points, type);
+async function insertCustomerTxnNoOrder(phone, points, type) {
+  return qRun('INSERT INTO customer_point_transactions (customer_phone, points, type) VALUES (?,?,?)', [phone, points, type]);
 }
 
-function listAllCustomerPoints() {
-  return db.prepare('SELECT * FROM customer_points ORDER BY points DESC').all();
+async function listAllCustomerPoints() {
+  return q('SELECT * FROM customer_points ORDER BY points DESC');
 }
 
-function listCustomerTxns(limit) {
-  return db.prepare('SELECT * FROM customer_point_transactions ORDER BY id DESC LIMIT ?').all(limit);
+async function listCustomerTxns(limit) {
+  return q('SELECT * FROM customer_point_transactions ORDER BY id DESC LIMIT ?', [limit]);
 }
 
-function deleteAllCustomerPoints() {
-  return db.prepare('DELETE FROM customer_points').run();
+async function deleteAllCustomerPoints() {
+  return qRun('DELETE FROM customer_points');
 }
 
-function deleteAllCustomerTxns() {
-  return db.prepare('DELETE FROM customer_point_transactions').run();
+async function deleteAllCustomerTxns() {
+  return qRun('DELETE FROM customer_point_transactions');
 }
 
 // ===== Vendor points =====
 
-function getVendorPoints(vendorId) {
-  return db.prepare('SELECT * FROM vendor_points WHERE vendor_id=?').get(vendorId);
+async function getVendorPoints(vendorId) {
+  return qOne('SELECT * FROM vendor_points WHERE vendor_id=?', [vendorId]);
 }
 
-function createVendorPoints(vendorId, points, dailyDate, dailyTotal) {
-  return db.prepare('INSERT INTO vendor_points (vendor_id, points, daily_sales_date, daily_sales_total) VALUES (?, ?, ?, ?)').run(vendorId, points, dailyDate, dailyTotal);
+async function createVendorPoints(vendorId, points, dailyDate, dailyTotal) {
+  return qRun('INSERT INTO vendor_points (vendor_id, points, daily_sales_date, daily_sales_total) VALUES (?, ?, ?, ?)', [vendorId, points, dailyDate, dailyTotal]);
 }
 
-function addVendorPoints(vendorId, points) {
-  return db.prepare('UPDATE vendor_points SET points = points + ? WHERE vendor_id=?').run(points, vendorId);
+async function addVendorPoints(vendorId, points) {
+  return qRun('UPDATE vendor_points SET points = points + ? WHERE vendor_id=?', [points, vendorId]);
 }
 
-function redeemVendorPoints(vendorId, points) {
-  return db.prepare('UPDATE vendor_points SET points = points - ? WHERE vendor_id=?').run(points, vendorId);
+async function redeemVendorPoints(vendorId, points) {
+  return qRun('UPDATE vendor_points SET points = points - ? WHERE vendor_id=?', [points, vendorId]);
 }
 
-function updateVendorDailySales(vendorId, amount) {
-  return db.prepare('UPDATE vendor_points SET daily_sales_total = daily_sales_total + ? WHERE vendor_id=?').run(amount, vendorId);
+async function updateVendorDailySales(vendorId, amount) {
+  return qRun('UPDATE vendor_points SET daily_sales_total = daily_sales_total + ? WHERE vendor_id=?', [amount, vendorId]);
 }
 
-function resetVendorDailySales(vendorId, amount, today) {
-  return db.prepare('UPDATE vendor_points SET daily_sales_total = ?, daily_sales_date = ? WHERE vendor_id=?').run(amount, today, vendorId);
+async function resetVendorDailySales(vendorId, amount, today) {
+  return qRun('UPDATE vendor_points SET daily_sales_total = ?, daily_sales_date = ? WHERE vendor_id=?', [amount, today, vendorId]);
 }
 
-function insertVendorTxn(vendorId, points, type) {
-  return db.prepare('INSERT INTO vendor_point_transactions (vendor_id, points, type) VALUES (?, ?, ?)').run(vendorId, points, type);
+async function insertVendorTxn(vendorId, points, type) {
+  return qRun('INSERT INTO vendor_point_transactions (vendor_id, points, type) VALUES (?, ?, ?)', [vendorId, points, type]);
 }
 
-function sumVendorEarnedToday(vendorId, today) {
-  return db.prepare("SELECT COALESCE(SUM(points),0) as total FROM vendor_point_transactions WHERE vendor_id=? AND type='earn' AND date(created_at)=?").get(vendorId, today).total;
+async function sumVendorEarnedToday(vendorId, today) {
+  const r = await qOne("SELECT COALESCE(SUM(points),0) as total FROM vendor_point_transactions WHERE vendor_id=? AND type='earn' AND date(created_at)=?", [vendorId, today]);
+  return r ? r.total : 0;
 }
 
-function listAllVendorPoints() {
-  return db.prepare('SELECT vp.*, v.display_name as vendor_name FROM vendor_points vp JOIN vendors v ON vp.vendor_id = v.id ORDER BY vp.points DESC').all();
+async function listAllVendorPoints() {
+  return q('SELECT vp.*, v.display_name as vendor_name FROM vendor_points vp JOIN vendors v ON vp.vendor_id = v.id ORDER BY vp.points DESC');
 }
 
-function listAllReductions() {
-  return db.prepare('SELECT vcr.*, v.display_name as vendor_name FROM vendor_commission_reductions vcr JOIN vendors v ON vcr.vendor_id = v.id ORDER BY vcr.expires_at ASC').all();
+async function listAllReductions() {
+  return q('SELECT vcr.*, v.display_name as vendor_name FROM vendor_commission_reductions vcr JOIN vendors v ON vcr.vendor_id = v.id ORDER BY vcr.expires_at ASC');
 }
 
-function deleteAllVendorPoints() {
-  return db.prepare('DELETE FROM vendor_points').run();
+async function deleteAllVendorPoints() {
+  return qRun('DELETE FROM vendor_points');
 }
 
-function deleteAllVendorTxns() {
-  return db.prepare('DELETE FROM vendor_point_transactions').run();
+async function deleteAllVendorTxns() {
+  return qRun('DELETE FROM vendor_point_transactions');
 }
 
-function deleteAllReductions() {
-  return db.prepare('DELETE FROM vendor_commission_reductions').run();
+async function deleteAllReductions() {
+  return qRun('DELETE FROM vendor_commission_reductions');
 }
 
-function deleteVendorPoints(vendorId) {
-  return db.prepare('DELETE FROM vendor_points WHERE vendor_id = ?').run(vendorId);
+async function deleteVendorPoints(vendorId) {
+  return qRun('DELETE FROM vendor_points WHERE vendor_id = ?', [vendorId]);
 }
 
-function deleteVendorTxns(vendorId) {
-  return db.prepare('DELETE FROM vendor_point_transactions WHERE vendor_id = ?').run(vendorId);
+async function deleteVendorTxns(vendorId) {
+  return qRun('DELETE FROM vendor_point_transactions WHERE vendor_id = ?', [vendorId]);
 }
 
-function deleteVendorReductions(vendorId) {
-  return db.prepare('DELETE FROM vendor_commission_reductions WHERE vendor_id = ?').run(vendorId);
+async function deleteVendorReductions(vendorId) {
+  return qRun('DELETE FROM vendor_commission_reductions WHERE vendor_id = ?', [vendorId]);
 }
 
 // ===== Commission reductions =====
 
-function listActiveReductions(vendorId) {
-  return db.prepare(`SELECT * FROM vendor_commission_reductions WHERE vendor_id=? AND expires_at > datetime('now') ORDER BY expires_at ASC`).all(vendorId);
+async function listActiveReductions(vendorId) {
+  return q(`SELECT * FROM vendor_commission_reductions WHERE vendor_id=? AND expires_at > datetime('now') ORDER BY expires_at ASC`, [vendorId]);
 }
 
-function sumActiveReductions(vendorId, nowIso) {
-  return db.prepare('SELECT COALESCE(SUM(reduction_percent),0) as total FROM vendor_commission_reductions WHERE vendor_id=? AND expires_at > ?').get(vendorId, nowIso);
+async function sumActiveReductions(vendorId, nowIso) {
+  return qOne('SELECT COALESCE(SUM(reduction_percent),0) as total FROM vendor_commission_reductions WHERE vendor_id=? AND expires_at > ?', [vendorId, nowIso]);
 }
 
-function insertReduction(vendorId, reductionPercent, expiresIso) {
-  return db.prepare('INSERT INTO vendor_commission_reductions (vendor_id, reduction_percent, expires_at) VALUES (?, ?, ?)').run(vendorId, reductionPercent, expiresIso);
+async function insertReduction(vendorId, reductionPercent, expiresIso) {
+  return qRun('INSERT INTO vendor_commission_reductions (vendor_id, reduction_percent, expires_at) VALUES (?, ?, ?)', [vendorId, reductionPercent, expiresIso]);
 }
 
-function redeemReduction(vendorId, points, reductionPercent, expiresIso) {
-  redeemVendorPoints(vendorId, points);
-  insertVendorTxn(vendorId, points, 'redeem');
-  return insertReduction(vendorId, reductionPercent, expiresIso);
+async function redeemReduction(vendorId, points, reductionPercent, expiresIso) {
+  return qTxn(async () => {
+    await redeemVendorPoints(vendorId, points);
+    await insertVendorTxn(vendorId, points, 'redeem');
+    return insertReduction(vendorId, reductionPercent, expiresIso);
+  });
 }
 
 // ===== Settings helpers =====
 
-function getSettingValue(key, fallback) {
-  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+async function getSettingValue(key, fallback) {
+  const row = await qOne('SELECT value FROM settings WHERE key = ?', [key]);
   return row ? row.value : fallback;
 }
 

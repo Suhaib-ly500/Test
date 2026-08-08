@@ -28,7 +28,7 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
-db.exec(`
+const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS vendors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -219,16 +219,38 @@ db.exec(`
     value TEXT NOT NULL,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
-`);
 
-try { db.exec("ALTER TABLE customer_offers ADD COLUMN valid_until DATETIME"); } catch(e) {}
-try { db.exec("ALTER TABLE orders ADD COLUMN discount_amount REAL DEFAULT 0"); } catch(e) {}
-try { db.exec("ALTER TABLE orders ADD COLUMN points_used INTEGER DEFAULT 0"); } catch(e) {}
-try {
-  const tblInfo = db.prepare("PRAGMA table_info('orders')").all();
-  if (!tblInfo.find(c => c.name === 'screenshot_path')) {
-    db.exec("ALTER TABLE orders ADD COLUMN screenshot_path TEXT DEFAULT ''");
-    db.exec(`CREATE TABLE orders_new (
+  CREATE TABLE IF NOT EXISTS files (
+    id TEXT PRIMARY KEY,
+    mime TEXT DEFAULT '',
+    size INTEGER DEFAULT 0,
+    data BLOB NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+const ALTER_STATEMENTS = [
+  "ALTER TABLE customer_offers ADD COLUMN valid_until DATETIME",
+  "ALTER TABLE orders ADD COLUMN discount_amount REAL DEFAULT 0",
+  "ALTER TABLE orders ADD COLUMN points_used INTEGER DEFAULT 0"
+];
+
+const defaultPointSettings = [
+  ['customer_points_per_order', '5'],
+  ['customer_point_discount', '0.5'],
+  ['customer_max_discount_percent', '50'],
+  ['vendor_daily_target', '200'],
+  ['vendor_points_per_target', '10'],
+  ['vendor_commission_reduction_per_point', '1'],
+  ['vendor_reduction_hours', '24']
+];
+
+function migrateOrdersScreenshotSync() {
+  try {
+    const tblInfo = db.prepare("PRAGMA table_info('orders')").all();
+    if (!tblInfo.find(c => c.name === 'screenshot_path')) {
+      db.exec("ALTER TABLE orders ADD COLUMN screenshot_path TEXT DEFAULT ''");
+      db.exec(`CREATE TABLE orders_new (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_name TEXT NOT NULL,
       customer_phone TEXT NOT NULL,
@@ -243,32 +265,128 @@ try {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (vendor_id) REFERENCES vendors(id)
     )`);
-    db.exec("INSERT INTO orders_new SELECT id,customer_name,customer_phone,customer_email,vendor_id,subscription_name,amount,status,discount_amount,points_used,'' as screenshot_path,created_at FROM orders");
-    db.exec("DROP TABLE orders");
-    db.exec("ALTER TABLE orders_new RENAME TO orders");
-  }
-} catch(e) {}
-
-const defaultPointSettings = [
-  ['customer_points_per_order', '5'],
-  ['customer_point_discount', '0.5'],
-  ['customer_max_discount_percent', '50'],
-  ['vendor_daily_target', '200'],
-  ['vendor_points_per_target', '10'],
-  ['vendor_commission_reduction_per_point', '1'],
-  ['vendor_reduction_hours', '24']
-];
-for (const [k, v] of defaultPointSettings) {
-  db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run(k, v);
+      db.exec("INSERT INTO orders_new SELECT id,customer_name,customer_phone,customer_email,vendor_id,subscription_name,amount,status,discount_amount,points_used,'' as screenshot_path,created_at FROM orders");
+      db.exec("DROP TABLE orders");
+      db.exec("ALTER TABLE orders_new RENAME TO orders");
+    }
+  } catch (e) {}
 }
 
-function getSetting(key, fallback) {
-  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+if (!turso) {
+  // الوضع المحلي: نفس السلوك السابق الفوري
+  db.exec(SCHEMA_SQL);
+  for (const s of ALTER_STATEMENTS) {
+    try { db.exec(s); } catch (e) {}
+  }
+  migrateOrdersScreenshotSync();
+  for (const [k, v] of defaultPointSettings) {
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run(k, v);
+  }
+}
+
+// ================= طبقة الوصول الموحّدة (متزامنة/غير متزامنة) =================
+
+function rowsToObjects(columns, rows) {
+  return rows.map(r => {
+    const o = {};
+    for (let i = 0; i < columns.length; i++) {
+      const v = r[i];
+      o[columns[i]] = v instanceof Uint8Array ? Buffer.from(v) : v;
+    }
+    return o;
+  });
+}
+
+async function qExec(sql) {
+  if (turso) {
+    const stmts = sql.split(';').map(s => s.trim()).filter(Boolean);
+    for (const s of stmts) await turso.execute({ sql: s });
+    return;
+  }
+  db.exec(sql);
+}
+
+async function q(sql, params = []) {
+  if (turso) {
+    const r = await turso.execute({ sql, args: params });
+    return rowsToObjects(r.columns, r.rows);
+  }
+  return db.prepare(sql).all(...params);
+}
+
+async function qOne(sql, params = []) {
+  if (turso) {
+    const r = await turso.execute({ sql, args: params });
+    return rowsToObjects(r.columns, r.rows)[0];
+  }
+  return db.prepare(sql).get(...params);
+}
+
+async function qRun(sql, params = []) {
+  if (turso) {
+    const r = await turso.execute({ sql, args: params });
+    return { changes: r.rowsAffected || 0, lastInsertRowid: Number(r.lastInsertRowid) || 0 };
+  }
+  return db.prepare(sql).run(...params);
+}
+
+async function qTxn(fn) {
+  if (turso) {
+    await qExec('BEGIN IMMEDIATE');
+    try {
+      const r = await fn();
+      await qExec('COMMIT');
+      return r;
+    } catch (e) {
+      try { await qExec('ROLLBACK'); } catch (_) {}
+      throw e;
+    }
+  }
+  return fn();
+}
+
+async function ensureSchema() {
+  if (!turso) return;
+  await qExec(SCHEMA_SQL);
+  for (const s of ALTER_STATEMENTS) {
+    try { await qExec(s); } catch (e) {}
+  }
+  try {
+    const tblInfo = await q("PRAGMA table_info('orders')");
+    if (!tblInfo.find(c => c.name === 'screenshot_path')) {
+      await qExec("ALTER TABLE orders ADD COLUMN screenshot_path TEXT DEFAULT ''");
+      await qExec(`CREATE TABLE orders_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      customer_email TEXT DEFAULT '',
+      vendor_id INTEGER,
+      subscription_name TEXT NOT NULL,
+      amount REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      discount_amount REAL DEFAULT 0,
+      points_used INTEGER DEFAULT 0,
+      screenshot_path TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (vendor_id) REFERENCES vendors(id)
+    )`);
+      await qExec("INSERT INTO orders_new SELECT id,customer_name,customer_phone,customer_email,vendor_id,subscription_name,amount,status,discount_amount,points_used,'' as screenshot_path,created_at FROM orders");
+      await qExec("DROP TABLE orders");
+      await qExec("ALTER TABLE orders_new RENAME TO orders");
+    }
+  } catch (e) {}
+  for (const [k, v] of defaultPointSettings) {
+    await qRun('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [k, v]);
+  }
+}
+
+async function getSetting(key, fallback) {
+  const row = await qOne('SELECT value FROM settings WHERE key = ?', [key]);
   return row ? row.value : fallback;
 }
 
-function setSetting(key, value) {
-  return db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, String(value));
+async function setSetting(key, value) {
+  return qRun('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, String(value)]);
 }
 
-module.exports = { db, turso, getSetting, setSetting };
+module.exports = { db, turso, q, qOne, qRun, qExec, qTxn, getSetting, setSetting, ensureSchema };
