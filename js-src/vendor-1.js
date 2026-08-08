@@ -50,16 +50,23 @@
             }
         })();
 
-        function vendorLogin() {
-            const u = document.getElementById('login-username').value;
-            const p = document.getElementById('login-password').value;
-            document.getElementById('login-error').classList.add('hidden');
-            document.getElementById('login-info').classList.add('hidden');
+        function performVendorLogin(u, p, attempt) {
+            const retry = () => {
+                if (attempt < 3) {
+                    setTimeout(function() { performVendorLogin(u, p, attempt + 1); }, 1500);
+                } else {
+                    document.getElementById('login-error').classList.remove('hidden');
+                    document.getElementById('login-error').textContent = 'فشل الاتصال بالسيرفر. تأكد من اتصال الإنترنت وحاول مجدداً';
+                }
+            };
             fetch('/api/vendor/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: u, password: p })
-            }).then(r => r.json()).then(data => {
+            }).then(r => r.text()).then(text => {
+                let data;
+                try { data = JSON.parse(text); } catch (e) { data = null; }
+                if (!data) return retry();
                 if (data.success) {
                     if (data.vendor.is_admin) { window.location.href = '/admin.html'; return; }
                     vendorId = data.token;
@@ -84,14 +91,15 @@
                         document.getElementById('login-error').textContent = data.message || 'فشل تسجيل الدخول';
                     }
                 }
-            }).catch((e) => {
-                document.getElementById('login-error').classList.remove('hidden');
-                document.getElementById('login-error').textContent = 'فشل الاتصال بالسيرفر';
-                console.error('[login] network error:', e && e.message ? e.message : e);
-                if (e && e.message) {
-                    document.getElementById('login-error').textContent += ' (' + e.message + ')';
-                }
-            });
+            }).catch(() => retry());
+        }
+
+        function vendorLogin() {
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('login-info').classList.add('hidden');
+            performVendorLogin(u, p, 0);
         }
 
         function logout() {

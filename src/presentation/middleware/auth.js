@@ -48,8 +48,8 @@ const htmlTokenMiddleware = (req, res, next) => {
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { success: false, message: 'محاولات كثيرة جداً. انتظر 15 دقيقة.' },
+  max: 40,
+  message: { success: false, message: '�?�?�?�?�?�?�? �?��?�?�? �?�?�?�?. �?�?�?�? 15 �?�?�?�?�?.' },
   standardHeaders: true,
   legacyHeaders: false
 });
