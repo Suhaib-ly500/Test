@@ -79,23 +79,26 @@ module.exports = (app) => {
     } catch (e) { console.error('خطأ داخلي:', e.message); res.status(500).json({ success: false, message: 'حدث خطأ غير متوقع. حاول مرة أخرى' }); }
   }); });
 
-  app.post('/api/support', requirePublicToken, strictPostLimiter, (req, res) => {
+app.post('/api/support', requirePublicToken, strictPostLimiter, (req, res) => {
     const { name, phone, message } = req.body;
     const err = validate({ name: { required: true, type: 'string', maxLength: 100, label: 'الاسم' }, phone: { required: true, type: 'string', maxLength: 20, label: 'رقم الهاتف' }, message: { required: true, type: 'string', maxLength: 2000, label: 'الرسالة' } }, req.body);
     if (err) return res.json({ success: false, message: err });
-    const supportEmail = config.supportEmail;
-    if (!transporter) {
+    const failSafe = () => {
       contentRepository.logActivity(0, 'support_message', 'الاسم: ' + name + ' | الهاتف: ' + phone + ' | الرسالة: ' + message).catch(() => {});
-      return res.json({ success: true, message: 'تم استلام رسالتك. سنتواصل معك قريباً.' });
+      res.json({ success: true, message: 'تم استلام رسالتك. سنتواصل معك قريباً.' });
+    };
+    try {
+      const sender = (config.vaultData.EMAIL_USER || process.env.EMAIL_USER || '').trim();
+      if (!transporter || !sender) return failSafe();
+      const mailOptions = { from: '"دعم ماتريكس برو" <' + sender + '>', replyTo: phone ? phone + '@sms.local' : undefined, to: config.supportEmail, subject: 'رسالة دعم فني من ' + name, html: '<h3>رسالة دعم فني جديدة</h3><p><strong>الاسم:</strong> ' + name + '</p><p><strong>رقم الهاتف:</strong> ' + phone + '</p><p><strong>الرسالة:</strong></p><p>' + message + '</p><hr><p style="color:#888;font-size:12px;">هذه الرسالة أُرسلت عبر نموذج الدعم الفني في منصة ماتريكس برو</p>' };
+      transporter.sendMail(mailOptions, (errMail) => {
+        if (errMail) return failSafe();
+        res.json({ success: true, message: 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً.' });
+      });
+    } catch (e) {
+      console.error('فشل إرسال رسالة الدعم (سيعمل الحفظ المحلي):', String(e && e.message || e));
+      failSafe();
     }
-    const mailOptions = { from: '"دعم ماتريكس برو" <' + (config.vaultData.EMAIL_USER || 'support@matrixpro.com') + '>', replyTo: phone ? phone + '@sms.local' : undefined, to: supportEmail, subject: 'رسالة دعم فني من ' + name, html: '<h3>رسالة دعم فني جديدة</h3><p><strong>الاسم:</strong> ' + name + '</p><p><strong>رقم الهاتف:</strong> ' + phone + '</p><p><strong>الرسالة:</strong></p><p>' + message + '</p><hr><p style="color:#888;font-size:12px;">هذه الرسالة أُرسلت عبر نموذج الدعم الفني في منصة ماتريكس برو</p>' };
-    transporter.sendMail(mailOptions, (errMail) => {
-      if (errMail) {
-        contentRepository.logActivity(0, 'support_message', 'الاسم: ' + name + ' | الهاتف: ' + phone + ' | الرسالة: ' + message).catch(() => {});
-        return res.json({ success: true, message: 'تم استلام رسالتك. سنتواصل معك قريباً.' });
-      }
-      res.json({ success: true, message: 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً.' });
-    });
   });
 
   app.get('/api/marketplace/offerings', async (req, res, next) => {
