@@ -17,7 +17,7 @@
         let appliedPointsDiscount = 0;
         let pointsToUse = 0;
 
-        function showToast(name) {
+        function cartToast(name) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-title').innerText = 'تم إضافة: ' + name;
             toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
@@ -34,10 +34,10 @@
         function addToCart(item) {
             if (!item) return;
             const exists = cart.find(i => i.vendor_id === item.vendor_id && i.subscription_name === item.subscription_name);
-            if (exists) { showToast(item.subscription_name + ' (موجود مسبقاً)'); return; }
+            if (exists) { cartToast(item.subscription_name + ' (موجود مسبقاً)'); return; }
             cart.push({ ...item });
             updateCartBadge();
-            showToast(item.subscription_name);
+            cartToast(item.subscription_name);
             document.getElementById('sub-detail-modal').classList.add('hidden');
         }
 
@@ -171,6 +171,68 @@ function esc(s) {
 function escAttr(s) { return esc(s); }
 function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
 
+        var lastOrderMsgs = [];
+        var lastOrderCopyMsg = '';
+
+        function whatsappNumber(v) {
+            var num = String(v.phone || '').replace(/[^0-9]/g, '');
+            if (num.startsWith('0')) num = '218' + num.slice(1);
+            else if (!num.startsWith('218')) num = '218' + num;
+            return num;
+        }
+
+        function showOrderSuccess(cartItems, d) {
+            lastOrderMsgs = [];
+            lastOrderCopyMsg = '';
+            var ptsEl = document.getElementById('order-success-points');
+            if (d.points_earned > 0) {
+                ptsEl.classList.remove('hidden');
+                ptsEl.innerHTML = '🎉 مبروك! تمت إضافة <b>' + d.points_earned + '</b> نقطة إلى رصيدك';
+            } else { ptsEl.classList.add('hidden'); }
+            var itemsEl = document.getElementById('order-success-items');
+            itemsEl.innerHTML = cartItems.map(function(item, i) {
+                return '<div class="flex justify-between text-deep-500"><span>' + (i + 1) + ') ' + esc(item.subscription_name) + '</span><span class="font-bold">' + (parseFloat(item.amount) || 0).toFixed(2) + ' د.ل</span></div>';
+            }).join('');
+            var vendorsEl = document.getElementById('order-success-vendors');
+            var html = '';
+            if (d.vendors && d.vendors.length) {
+                d.vendors.forEach(function(v, idx) {
+                    if (!v.phone) return;
+                    var vendorItems = cartItems.filter(function(item) { return item.vendor_id == v.id; });
+                    var discountPerItem = d.discount_amount ? (d.discount_amount / vendorItems.length) : 0;
+                    var itemsList = vendorItems.map(function(item, i) {
+                        var discounted = (parseFloat(item.amount) || 0) - discountPerItem;
+                        var priceStr = d.discount_amount > 0 ? discounted.toFixed(2) + ' د.ل (بدلاً من ' + item.amount + ')' : item.amount + ' د.ل';
+                        return (i + 1) + '- ' + item.subscription_name + ' (' + priceStr + ')';
+                    }).join('\n');
+                    var totalAmount = vendorItems.reduce(function(sum, item) { return sum + (parseFloat(item.amount) || 0); }, 0);
+                    var finalTotal = d.discount_amount > 0 ? (totalAmount - (d.discount_amount / d.vendors.length)).toFixed(2) : totalAmount.toFixed(2);
+                    var msg = 'السلام عليكم 👋\nطلب جديد من متجر ماتريكس برو\n\n👤 اسم العميل: ' + document.getElementById('checkout-name').value.trim() + '\n📱 رقم الهاتف: ' + document.getElementById('checkout-phone').value.trim() + '\n\n🛒 المشتريات:\n' + itemsList + '\n\n💰 المجموع الكلي: ' + finalTotal + ' د.ل' + (d.points_earned > 0 ? '\n\n🎉 تم إضافة ' + d.points_earned + ' نقطة إلى رصيدك!' : '') + '\n\nأرجو تأكيد الطلب وشكراً.';
+                    lastOrderMsgs.push({ phone: whatsappNumber(v), msg: msg, name: esc(v.display_name || v.username || 'المزود') });
+                    html += '<div class="bg-white border border-deep-100 rounded-2xl p-3.5 flex items-center justify-between gap-2"><div><div class="text-xs font-bold text-deep-600">' + esc(v.display_name || v.username || 'المزود') + '</div><div class="text-[10px] text-deep-400">' + vendorItems.length + ' اشتراكات • ' + finalTotal + ' د.ل</div></div>' + '<button onclick="sendOrderWhatsApp(' + idx + ')" class="bg-gradient-to-l from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold smooth-transition shadow-md shadow-emerald-200 flex items-center gap-1.5"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> واتساب</button></div>';
+                });
+            }
+            vendorsEl.innerHTML = html || '<div class="text-xs text-deep-400">لا توجد أرقام واتساب للمزودين بعد</div>';
+            lastOrderCopyMsg = lastOrderMsgs.map(function(m) { return m.msg; }).join('\n\n==========\n\n');
+            document.getElementById('order-success-modal').classList.remove('hidden');
+        }
+
+        function sendOrderWhatsApp(idx) {
+            var m = lastOrderMsgs[idx];
+            if (!m) return;
+            window.open('https://wa.me/' + m.phone + '?text=' + encodeURIComponent(m.msg), '_blank');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(m.msg).then(function() { showToast('✅ الرسالة جاهزة في واتساب'); }).catch(function() { fallbackCopy(m.msg); });
+            } else { fallbackCopy(m.msg); }
+        }
+
+        function copyLastOrderMsg() {
+            if (!lastOrderCopyMsg) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(lastOrderCopyMsg).then(function() { showToast('✅ تم نسخ الرسالة كاملة'); }).catch(function() { fallbackCopy(lastOrderCopyMsg); });
+            } else { fallbackCopy(lastOrderCopyMsg); }
+        }
+
         function submitOrder() {
             var name = document.getElementById('checkout-name').value.trim();
             var phone = document.getElementById('checkout-phone').value.trim();
@@ -186,34 +248,7 @@ function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
                     var cartItems = cart.slice();
                     cart = []; updateCartBadge();
                     document.getElementById('checkout-modal').classList.add('hidden');
-                    var ptsMsg = d.points_earned > 0 ? '\n\n🎉 تم إضافة ' + d.points_earned + ' نقطة إلى رصيدك!' : '';
-                    if (d.vendors && d.vendors.length) {
-                        d.vendors.forEach(function(v) {
-                            if (v.phone) {
-                                var vendorItems = cartItems.filter(function(item) { return item.vendor_id == v.id; });
-                                var discountPerItem = appliedPointsDiscount / vendorItems.length;
-                                var itemsList = vendorItems.map(function(item, i) {
-                                    var discounted = (parseFloat(item.amount) || 0) - discountPerItem;
-                                    var priceStr = appliedPointsDiscount > 0 ? discounted.toFixed(2) + ' د.ل (بدلاً من ' + item.amount + ')' : item.amount + ' د.ل';
-                                    return (i+1) + '- ' + item.subscription_name + ' (' + priceStr + ')';
-                                }).join('\n');
-                                var totalAmount = vendorItems.reduce(function(sum, item) { return sum + (parseFloat(item.amount) || 0); }, 0);
-                                var finalTotal = appliedPointsDiscount > 0 ? (totalAmount - (appliedPointsDiscount / d.vendors.length)).toFixed(2) : totalAmount.toFixed(2);
-                                var msg = 'السلام عليكم 👋\nطلب جديد من متجر ماتريكس برو\n\n👤 اسم العميل: ' + name + '\n📱 رقم الهاتف: ' + phone + '\n\n🛒 المشتريات:\n' + itemsList + '\n\n💰 المجموع الكلي: ' + finalTotal + ' د.ل' + ptsMsg + '\n\nأرجو تأكيد الطلب وشكراً.';
-                                var num = v.phone.replace(/[^0-9]/g, '');
-                                if (num.startsWith('0')) num = '218' + num.slice(1);
-                                else if (!num.startsWith('218')) num = '218' + num;
-                                // فتح واتساب مع الرسالة الجاهزة مسبقاً داخل الرابط
-                                window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank');
-                                // محاولة نسخ الرسالة كنسخة احتياطية
-                                if (navigator.clipboard && navigator.clipboard.writeText) {
-                                    navigator.clipboard.writeText(msg).then(function() {
-                                        showToast('✅ الرسالة جاهزة في واتساب' + (d.points_earned > 0 ? ' (+' + d.points_earned + ' نقطة)' : ''));
-                                    }).catch(function() { fallbackCopy(msg); });
-                                } else { fallbackCopy(msg); }
-                            }
-                        });
-                    }
+                    showOrderSuccess(cartItems, d);
                 } else { alert('❌ ' + d.message); }
             }).catch(function() { alert('❌ فشل الاتصال بالسيرفر'); });
         }
