@@ -1,11 +1,12 @@
-const CACHE_NAME = 'matrix-vendor-v1';
+const CACHE_NAME = 'matrix-vendor-v2';
 const PRECACHE = [
   '/vendor.html',
   '/manifest.json',
   '/logo.png',
   '/css/vendor.css',
   '/js/vendor-1.js',
-  '/js/vendor-2.js'
+  '/js/vendor-2.js',
+  '/js/vendor-offline.js'
 ];
 
 self.addEventListener('install', (event) => {
