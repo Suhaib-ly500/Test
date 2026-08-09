@@ -52,8 +52,8 @@
 
         function performVendorLogin(u, p, attempt) {
             const retry = () => {
-                if (attempt < 3) {
-                    setTimeout(function() { performVendorLogin(u, p, attempt + 1); }, 1500);
+                if (attempt < 5) {
+                    setTimeout(function() { performVendorLogin(u, p, attempt + 1); }, 2000);
                 } else {
                     document.getElementById('login-error').classList.remove('hidden');
                     document.getElementById('login-error').textContent = 'فشل الاتصال بالسيرفر. تأكد من اتصال الإنترنت وحاول مجدداً';
