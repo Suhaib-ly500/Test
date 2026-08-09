@@ -5,6 +5,37 @@
         let catsData = [];
         let currentCatId = null;
 
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js?v=1').catch(function(){});
+        }
+        let deferredInstallPrompt = null;
+        (function setupInstall() {
+            const installBtn = document.getElementById('install-btn');
+            if (!installBtn) return;
+            window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                deferredInstallPrompt = e;
+                installBtn.classList.remove('hidden');
+            });
+            window.addEventListener('appinstalled', function() {
+                deferredInstallPrompt = null;
+                installBtn.classList.add('hidden');
+            });
+            installBtn.addEventListener('click', function() {
+                if (!deferredInstallPrompt) {
+                    alert('على آيفون/آيباد: اضغط زر المشاركة ثم اختر «إضافة إلى الشاشة الرئيسية».');
+                    return;
+                }
+                deferredInstallPrompt.prompt();
+                deferredInstallPrompt.userChoice.then(function(choice) {
+                    if (choice.outcome === 'accepted') {
+                        deferredInstallPrompt = null;
+                        installBtn.classList.add('hidden');
+                    }
+                });
+            });
+        })();
+
         (function autoLogin() {
             const storedToken = localStorage.getItem('vendorToken');
             if (storedToken) {

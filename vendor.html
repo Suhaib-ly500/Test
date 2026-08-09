@@ -4,6 +4,13 @@
     <link rel="stylesheet" href="/css/vendor.css">
 
     <link rel="icon" href="/logo.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#059669">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="لوحة المزود">
+    <link rel="apple-touch-icon" href="/logo.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم المزود | ماتريكس برو</title>
@@ -558,6 +565,10 @@
                 </button>
                 <span class="status-badge active hidden sm:flex"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse-glow"></span> متصل</span>
                 <span id="vendor-name-display" class="text-xs sm:text-sm font-medium text-gray-600 bg-white/80 border border-gray-100 px-2 sm:px-3 py-1.5 rounded-xl shadow-sm max-w-[80px] sm:max-w-none truncate"></span>
+                <button id="install-btn" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-2 sm:px-3.5 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 shadow-sm shadow-emerald-500/30 smooth-transition" title="تثبيت التطبيق">
+                    <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0 0l-4-4m4 4l4-4"></path></svg>
+                    <span class="hidden sm:inline">تثبيت</span>
+                </button>
                 <button onclick="logout()" class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 hover:border-red-200 px-2 sm:px-3.5 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 smooth-transition" title="خروج">
                     <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     <span class="hidden sm:inline">خروج</span>
