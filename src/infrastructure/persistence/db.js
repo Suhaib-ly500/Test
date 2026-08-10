@@ -331,8 +331,14 @@ async function qOne(sql, params = []) {
   return db.prepare(sql).get(...params);
 }
 
+let txnBuffer = null;
+
 async function qRun(sql, params = []) {
   if (turso) {
+    if (txnBuffer) {
+      txnBuffer.push({ sql, args: params });
+      return { changes: 0, lastInsertRowid: 0 };
+    }
     const r = await turso.execute({ sql, args: params });
     return { changes: r.rowsAffected || 0, lastInsertRowid: Number(r.lastInsertRowid) || 0 };
   }
@@ -341,14 +347,18 @@ async function qRun(sql, params = []) {
 
 async function qTxn(fn) {
   if (turso) {
-    await qExec('BEGIN IMMEDIATE');
+    // عميل HTTP عديم الحالة: لا يدعم BEGIN/COMMIT عبر طلبات منفصلة،
+    // لذلك نجمع الأوامر ونرسلها كدفعة واحدة ذرّية (Hrana batch)
+    const prev = txnBuffer;
+    txnBuffer = [];
     try {
       const r = await fn();
-      await qExec('COMMIT');
+      if (txnBuffer.length) {
+        await turso.batch(txnBuffer, 'write');
+      }
       return r;
-    } catch (e) {
-      try { await qExec('ROLLBACK'); } catch (_) {}
-      throw e;
+    } finally {
+      txnBuffer = prev;
     }
   }
   return fn();
