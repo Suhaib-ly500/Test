@@ -215,15 +215,43 @@ function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
             vendorsEl.innerHTML = html || '<div class="text-xs text-deep-400">لا توجد أرقام واتساب للمزودين بعد</div>';
             lastOrderCopyMsg = lastOrderMsgs.map(function(m) { return m.msg; }).join('\n\n==========\n\n');
             document.getElementById('order-success-modal').classList.remove('hidden');
+            var fb = document.getElementById('order-wa-fallback');
+            if (fb) fb.classList.add('hidden');
+            if (lastOrderMsgs.length === 1) sendOrderWhatsApp(0);
         }
 
         function sendOrderWhatsApp(idx) {
             var m = lastOrderMsgs[idx];
             if (!m) return;
-            window.open('https://wa.me/' + m.phone + '?text=' + encodeURIComponent(m.msg), '_blank');
+            var waUrl = 'https://wa.me/' + m.phone + '?text=' + encodeURIComponent(m.msg);
+            try {
+                var win = window.open(waUrl, '_blank');
+                if (win) {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(m.msg).then(function() { showToast('📣 تم فتح واتساب ونسخ الرسالة'); }).catch(function() { fallbackCopy(m.msg); });
+                    } else { fallbackCopy(m.msg); }
+                    return;
+                }
+            } catch (e) {}
+            // المنبثقات محجوبة (داخل إطار مدمج): نسخ الرابط + إظهار رابط يدوي
+            copyTextToClipboard(waUrl);
+            var fb = document.getElementById('order-wa-fallback');
+            if (fb) {
+                document.getElementById('order-wa-fallback-link').textContent = waUrl;
+                fb.classList.remove('hidden');
+            }
+            showToast('🔒 المتصفح يمنع الفتح التلقائي — تم نسخ رابط واتساب لك');
+        }
+
+        function copyTextToClipboard(text) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(m.msg).then(function() { showToast('✅ الرسالة جاهزة في واتساب'); }).catch(function() { fallbackCopy(m.msg); });
-            } else { fallbackCopy(m.msg); }
+                navigator.clipboard.writeText(text).then(function() { showToast('✅ تم نسخ رابط واتساب'); }).catch(function() { fallbackCopy(text); });
+            } else { fallbackCopy(text); }
+        }
+
+        function openWaFallbackLink() {
+            var el = document.getElementById('order-wa-fallback-link');
+            if (el && el.textContent) window.open(el.textContent, '_blank');
         }
 
         function copyLastOrderMsg() {

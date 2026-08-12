@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <link rel="stylesheet" href="/css/index.css">
@@ -546,6 +546,14 @@
                 <div id="order-success-items" class="bg-deep-50 rounded-2xl p-4 space-y-1.5 border border-deep-100/50 text-xs"></div>
                 <div class="text-[11px] text-deep-400 font-bold">اختر المزود لإرسال رسالة الطلب عبر واتساب:</div>
                 <div id="order-success-vendors" class="space-y-2"></div>
+                <div id="order-wa-fallback" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 text-[11px] text-amber-800 space-y-2">
+                    <div class="font-bold">🔒 متصفحك يمنع فتح واتساب تلقائياً — استخدم الرابط:</div>
+                    <a id="order-wa-fallback-link" href="#" target="_blank" rel="noopener" onclick="openWaFallbackLink();return false;" class="block break-all text-amber-700 underline font-mono"></a>
+                    <div class="flex gap-2">
+                        <button onclick="copyTextToClipboard(document.getElementById('order-wa-fallback-link').textContent || '')" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-900 py-2 rounded-xl font-bold smooth-transition">📋 نسخ الرابط</button>
+                        <button onclick="window.open(document.getElementById('order-wa-fallback-link').textContent || '', '_blank')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-xl font-bold smooth-transition">فتح الرابط</button>
+                    </div>
+                </div>
                 <button onclick="copyLastOrderMsg()" class="w-full bg-deep-50 hover:bg-deep-100 text-deep-600 py-3 rounded-xl text-xs font-bold smooth-transition border border-deep-100">📋 نسخ الرسالة كاملة</button>
                 <button onclick="document.getElementById('order-success-modal').classList.add('hidden')" class="w-full text-center text-xs text-deep-400 hover:text-deep smooth-transition">إغلاق ومواصلة التسوق</button>
             </div>
@@ -911,7 +919,7 @@
         <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-deep to-transparent pointer-events-none"></div>
     </section>
 
-        <script src="/js/index-1.js?v=20260809"></script>
+        <script src="/js/index-1.js?v=20260812"></script>
 
 
     <!-- ===== MARQUEE ===== -->
@@ -1191,10 +1199,10 @@
         </div>
     </footer>
 
-        <script src="/js/index-2.js?v=20260809"></script>
+        <script src="/js/index-2.js?v=20260812"></script>
 
 
-        <script src="/js/index-3.js?v=20260809"></script>
+        <script src="/js/index-3.js?v=20260812"></script>
 
 </body>
 </html>
