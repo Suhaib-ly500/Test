@@ -156,7 +156,7 @@
         // دالة إشعار مؤقت واضح (توست) مع زر إغلاق — أي نقرة على الرسالة تغلقها فوراً
         function showToast(msg) {
             var el = document.createElement('div');
-            el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:0;border-radius:14px;font-size:13px;line-height:1.6;font-weight:bold;z-index:99999;direction:rtl;box-shadow:0 12px 40px rgba(0,0,0,0.35);display:flex;align-items:stretch;gap:12px;max-width:min(92vw,460px);cursor:pointer;border:1px solid rgba(255,255,255,0.15)';
+            el.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:0;border-radius:14px;font-size:13px;line-height:1.6;font-weight:bold;z-index:99999;direction:rtl;box-shadow:0 12px 40px rgba(0,0,0,0.35);display:flex;align-items:stretch;gap:12px;max-width:min(92vw,460px);cursor:pointer;border:1px solid rgba(255,255,255,0.15)';
             el.innerHTML = '<span style="flex:1;padding:14px 16px;min-width:0">' + msg + '</span><button type="button" title="إغلاق" onclick="this.parentNode.parentNode.removeChild(this.parentNode)" style="border:none;border-left:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.12);color:#fff;font-size:11px;font-weight:bold;padding:0 14px;border-radius:0 14px 14px 0;cursor:pointer;white-space:nowrap">إغلاق ✕</button>';
             document.body.appendChild(el);
             var closed = false;
