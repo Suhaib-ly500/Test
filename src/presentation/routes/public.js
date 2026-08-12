@@ -235,9 +235,9 @@ app.post('/api/support', requirePublicToken, strictPostLimiter, (req, res) => {
         items: { required: true, type: 'array', minLength: 1, label: 'العناصر' }
       }, req.body);
       if (err) return res.status(400).json({ success: false, message: err });
-      for (const item of items) {
-        if (!item.vendor_id || !item.subscription_name || item.amount === undefined || item.amount === null) {
-          return res.status(400).json({ success: false, message: 'كل عنصر يجب أن يحتوي على vendor_id و subscription_name و amount' });
+for (const item of items) {
+        if (!item.vendor_id || !item.subscription_name || !item.subscription_id || item.amount === undefined || item.amount === null) {
+          return res.status(400).json({ success: false, message: 'كل عنصر يجب أن يحتوي على subscription_id و vendor_id و subscription_name و amount' });
         }
         const vendorIdNum = Number(item.vendor_id);
         if (isNaN(vendorIdNum)) return res.status(400).json({ success: false, message: 'vendor_id غير صالح' });
@@ -269,7 +269,7 @@ app.post('/api/support', requirePublicToken, strictPostLimiter, (req, res) => {
       if (points_used && customer_phone) await pointsService.redeemCustomerPoints(customer_phone, points_used);
       const vendorIds = [...new Set(items.map(i => Number(i.vendor_id)))];
       const vendors = await vendorRepository.findManyByIds(vendorIds);
-      res.json({ success: true, message: 'تم إرسال طلباتك بنجاح', vendors: vendors, points_earned: pointsEarned });
+      res.json({ success: true, message: 'تم إرسال طلباتك بنجاح', vendors: vendors, points_earned: pointsEarned, discount_amount: Number(discount_amount) || 0, points_used: Number(points_used) || 0 });
     } catch (e) { next(e); }
   });
 
