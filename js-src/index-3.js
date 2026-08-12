@@ -225,8 +225,6 @@ function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
             document.getElementById('order-success-modal').classList.remove('hidden');
             var fb = document.getElementById('order-wa-fallback');
             if (fb) fb.classList.add('hidden');
-            var banner = document.getElementById('order-wa-opened');
-            if (banner) banner.classList.add('hidden');
             if (lastOrderMsgs.length === 1) sendOrderWhatsApp(0);
         }
 
@@ -234,23 +232,16 @@ function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
             var m = lastOrderMsgs[idx];
             if (!m) return;
             var waUrl = 'https://wa.me/' + m.phone + '?text=' + encodeURIComponent(m.msg);
-            var banner = document.getElementById('order-wa-opened');
             try {
                 var win = window.open(waUrl, '_blank');
                 if (win) {
-                    if (banner) {
-                        banner.classList.remove('hidden');
-                        var bName = document.getElementById('order-wa-opened-name');
-                        if (bName) bName.textContent = m.name || 'المزود';
-                    }
                     if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(m.msg).then(function() { showToast('✅ تم فتح واتساب (' + (m.name || 'المزود') + ') — رسالة طلبك جاهزة للإرسال'); }).catch(function() { fallbackCopy(m.msg); });
+                        navigator.clipboard.writeText(m.msg).catch(function() { fallbackCopy(m.msg); });
                     } else { fallbackCopy(m.msg); }
                     return;
                 }
             } catch (e) {}
             // المنبثقات محجوبة (داخل إطار مدمج): نسخ الرابط + إظهار رابط يدوي
-            if (banner) banner.classList.add('hidden');
             copyTextToClipboard(waUrl);
             var fb = document.getElementById('order-wa-fallback');
             if (fb) {
