@@ -153,13 +153,16 @@
             try { document.execCommand('copy'); showToast('✅ تم نسخ الرسالة'); } catch(e) {}
             document.body.removeChild(ta);
         }
-        // دالة إشعار مؤقت (توست)
+        // دالة إشعار مؤقت واضح (توست) مع زر إغلاق
         function showToast(msg) {
             var el = document.createElement('div');
-            el.textContent = msg;
-            el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:12px;font-size:13px;z-index:9999;direction:rtl;box-shadow:0 8px 32px rgba(0,0,0,0.3);animation:fadeInUp 0.3s ease';
+            el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:0;border-radius:14px;font-size:13px;line-height:1.6;font-weight:bold;z-index:99999;direction:rtl;box-shadow:0 12px 40px rgba(0,0,0,0.35);display:flex;align-items:stretch;gap:12px;max-width:min(92vw,460px);animation:fadeInUp 0.3s ease;border:1px solid rgba(255,255,255,0.15)';
+            el.innerHTML = '<span style="flex:1;padding:14px 16px;min-width:0">' + msg + '</span><button type="button" title="إغلاق" style="border:none;border-left:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.12);color:#fff;font-size:11px;font-weight:bold;padding:0 14px;border-radius:0 14px 14px 0;cursor:pointer;white-space:nowrap;transition:background 0.2s">إغلاق ✕</button>';
             document.body.appendChild(el);
-            setTimeout(function() { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(function() { el.remove(); }, 500); }, 4000);
+            var remove = function() { if (!el.parentNode) return; el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(function() { if (el.parentNode) el.remove(); }, 300); };
+            el.querySelector('button').onclick = remove;
+            el.onclick = function(e) { if (e.target === el) remove(); };
+            setTimeout(remove, 8000);
         }
 
         // قراءة CSRF token من الصفحة
@@ -217,6 +220,8 @@ function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
             document.getElementById('order-success-modal').classList.remove('hidden');
             var fb = document.getElementById('order-wa-fallback');
             if (fb) fb.classList.add('hidden');
+            var banner = document.getElementById('order-wa-opened');
+            if (banner) banner.classList.add('hidden');
             if (lastOrderMsgs.length === 1) sendOrderWhatsApp(0);
         }
 
@@ -224,23 +229,30 @@ function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
             var m = lastOrderMsgs[idx];
             if (!m) return;
             var waUrl = 'https://wa.me/' + m.phone + '?text=' + encodeURIComponent(m.msg);
+            var banner = document.getElementById('order-wa-opened');
             try {
                 var win = window.open(waUrl, '_blank');
                 if (win) {
+                    if (banner) {
+                        banner.classList.remove('hidden');
+                        var bName = document.getElementById('order-wa-opened-name');
+                        if (bName) bName.textContent = m.name || 'المزود';
+                    }
                     if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(m.msg).then(function() { showToast('📣 تم فتح واتساب ونسخ الرسالة'); }).catch(function() { fallbackCopy(m.msg); });
+                        navigator.clipboard.writeText(m.msg).then(function() { showToast('✅ تم فتح واتساب (' + (m.name || 'المزود') + ') — رسالة طلبك جاهزة للإرسال'); }).catch(function() { fallbackCopy(m.msg); });
                     } else { fallbackCopy(m.msg); }
                     return;
                 }
             } catch (e) {}
             // المنبثقات محجوبة (داخل إطار مدمج): نسخ الرابط + إظهار رابط يدوي
+            if (banner) banner.classList.add('hidden');
             copyTextToClipboard(waUrl);
             var fb = document.getElementById('order-wa-fallback');
             if (fb) {
                 document.getElementById('order-wa-fallback-link').textContent = waUrl;
                 fb.classList.remove('hidden');
             }
-            showToast('🔒 المتصفح يمنع الفتح التلقائي — تم نسخ رابط واتساب لك');
+            showToast('🔒 متصفحك يمنع الفتح التلقائي — تم نسخ رابط واتساب لك');
         }
 
         function copyTextToClipboard(text) {
