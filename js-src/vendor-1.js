@@ -902,6 +902,17 @@
                     document.getElementById('ov-points-count').textContent = d.points;
                     document.getElementById('profile-points').textContent = d.points + ' نقطة';
                     document.getElementById('profile-commission-rate').textContent = d.effective_commission_rate + '%';
+                    var total = parseFloat(d.daily_sales_total) || 0;
+                    var target = parseFloat(d.daily_target) || 0;
+                    var progressEl = document.getElementById('daily-points-progress');
+                    if (progressEl) {
+                        var pct = target > 0 ? Math.min(100, Math.round(total / target * 100)) : 0;
+                        progressEl.style.width = pct + '%';
+                        var infoEl = document.getElementById('daily-points-info');
+                        if (infoEl) infoEl.textContent = 'مبيعات اليوم: ' + total + ' د.ل من ' + target + ' د.ل • النقاط المكتسبة اليوم: ' + (d.earned_today || 0);
+                        var ruleEl = document.getElementById('daily-points-rule');
+                        if (ruleEl) ruleEl.textContent = 'كل ' + target + ' د.ل مبيعات يومية مكتملة = ' + (d.points_per_target || 0) + ' نقطة، تُضاف تلقائياً عند إتمام الإدارة للطلب.';
+                    }
                     const redDiv = document.getElementById('profile-reductions');
                     if (d.reductions && d.reductions.length) {
                         redDiv.classList.remove('hidden');

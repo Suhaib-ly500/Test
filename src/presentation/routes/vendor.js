@@ -307,7 +307,22 @@ module.exports = (app) => {
       const vp = await pointsRepository.getVendorPoints(req.vendorId);
       const reductions = await pointsRepository.listActiveReductions(req.vendorId);
       const rate = await commissionService.effectiveRate(req.vendorId, null, null);
-      res.json({ success: true, points: vp ? vp.points : 0, reductions, effective_rate: rate, effective_commission_rate: rate });
+      const dailyTarget = parseFloat(await getSetting('vendor_daily_target', '200')) || 200;
+      const ptsPerTarget = parseFloat(await getSetting('vendor_points_per_target', '10')) || 10;
+      const today = new Date().toISOString().split('T')[0];
+      const earnedToday = await pointsRepository.sumVendorEarnedToday(req.vendorId, today);
+      res.json({
+        success: true,
+        points: vp ? vp.points : 0,
+        daily_sales_total: vp ? vp.daily_sales_total : 0,
+        daily_sales_date: vp ? vp.daily_sales_date : null,
+        daily_target: dailyTarget,
+        points_per_target: ptsPerTarget,
+        earned_today: earnedToday,
+        reductions,
+        effective_rate: rate,
+        effective_commission_rate: rate
+      });
     } catch (e) { next(e); }
   });
 
