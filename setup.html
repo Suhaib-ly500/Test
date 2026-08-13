@@ -5,7 +5,7 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ط§ظ„ط¥ط¹ط¯ط§ط¯ ط§ظ„ط£ظˆظ„ظٹ - ظ…ظ†طµط© ظ…ط§طھط±ظٹظƒط³ ط¨ط±ظˆ</title>
+<title>الإعداد الأولي - منصة ماتريكس برو</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { font-family: 'Cairo', 'Rubik', sans-serif; box-sizing: border-box; }
@@ -38,7 +38,7 @@ body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-heigh
 .step-content.active { display: block; }
 .secured-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; margin-top: 16px; justify-content: center; }
 .secured-badge svg { width: 14px; height: 14px; }
-/* ===== ط§ط³طھط¬ط§ط¨ط© ظ„ظ„ط´ط§ط´ط§طھ ط§ظ„طµط؛ظٹط±ط© ===== */
+/* ===== استجابة للشاشات الصغيرة ===== */
 @media (max-width: 480px) {
   body { padding: 6px; }
   .setup-card { padding: 18px; border-radius: 24px; }
@@ -52,9 +52,9 @@ body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-heigh
 </head>
 <body>
 <div class="setup-card">
-  <div class="logo">ًں”گ</div>
-  <h1 class="text-2xl font-bold text-center text-gray-900 mb-1">ط§ظ„ط¥ط¹ط¯ط§ط¯ ط§ظ„ط£ظˆظ„ظٹ</h1>
-  <p class="text-sm text-gray-500 text-center mb-6">ط£ظ†ط´ط¦ ط­ط³ط§ط¨ ط§ظ„ظ…ط´ط±ظپ ظ„طھط´ط؛ظٹظ„ ط§ظ„ظ…ظ†طµط©</p>
+  <div class="logo">🔐</div>
+  <h1 class="text-2xl font-bold text-center text-gray-900 mb-1">الإعداد الأولي</h1>
+  <p class="text-sm text-gray-500 text-center mb-6">أنشئ حساب المشرف لتشغيل المنصة</p>
 
   <div class="step-indicator">
     <div class="step-dot active" id="step-dot-0"></div>
@@ -66,58 +66,58 @@ body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-heigh
   <!-- Step 0: Username & Password -->
   <div class="step-content active" id="step-0">
     <div class="field-group">
-      <label>ط§ط³ظ… ط§ظ„ظ…ط³طھط®ط¯ظ…</label>
-      <input type="text" id="s-username" placeholder="ط£ط¯ط®ظ„ ط§ط³ظ… ط§ظ„ظ…ط³طھط®ط¯ظ…" autocomplete="off">
-      <div class="hint">ط³ظٹط³طھط®ط¯ظ… ظ„طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„ ط¥ظ„ظ‰ ظ„ظˆط­ط© ط§ظ„ط¥ط¯ط§ط±ط©</div>
+      <label>اسم المستخدم</label>
+      <input type="text" id="s-username" placeholder="أدخل اسم المستخدم" autocomplete="off">
+      <div class="hint">سيستخدم لتسجيل الدخول إلى لوحة الإدارة</div>
     </div>
     <div class="field-group">
-      <label>ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±</label>
-      <input type="password" id="s-password" placeholder="ظƒظ„ظ…ط© ظ…ط±ظˆط± ظ‚ظˆظٹط© (8 ط£ط­ط±ظپ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„)" oninput="checkPasswordStrength(this.value)">
+      <label>كلمة المرور</label>
+      <input type="password" id="s-password" placeholder="كلمة مرور قوية (8 أحرف على الأقل)" oninput="checkPasswordStrength(this.value)">
       <div class="password-strength"><div class="bar" id="pw-bar"></div></div>
-      <div id="pw-hint" class="hint">ط§ط³طھط®ط¯ظ… ط­ط±ظˆظپ ظƒط¨ظٹط±ط© ظˆطµط؛ظٹط±ط© ظˆط£ط±ظ‚ط§ظ… ظˆط±ظ…ظˆط² ظ…ظ† ط¯ظˆظ† ظ…ط³ط§ظپط§طھ</div>
+      <div id="pw-hint" class="hint">استخدم حروف كبيرة وصغيرة وأرقام ورموز من دون مسافات</div>
     </div>
     <div class="field-group">
-      <label>طھط£ظƒظٹط¯ ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±</label>
-      <input type="password" id="s-password2" placeholder="ط£ط¹ط¯ ط¥ط¯ط®ط§ظ„ ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±" oninput="checkPasswordMatch()">
+      <label>تأكيد كلمة المرور</label>
+      <input type="password" id="s-password2" placeholder="أعد إدخال كلمة المرور" oninput="checkPasswordMatch()">
       <div id="pw-match" class="hint"></div>
     </div>
-    <button class="btn-primary mt-2" onclick="nextStep(1)">ظ…طھط§ط¨ط¹ط© â†’</button>
+    <button class="btn-primary mt-2" onclick="nextStep(1)">متابعة →</button>
     <button onclick="window.location.href='/admin.html'" class="w-full mt-2 py-3 rounded-2xl text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all">
-      âڈ­ طھط®ط·ظٹ ظˆظپطھط­ ظ„ظˆط­ط© ط§ظ„ط¥ط¯ط§ط±ط©
+      ⏭ تخطي وفتح لوحة الإدارة
     </button>
   </div>
 
   <!-- Step 1: Personal Info -->
   <div class="step-content" id="step-1">
     <div class="field-group">
-      <label>ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ</label>
+      <label>البريد الإلكتروني</label>
       <input type="email" id="s-email" placeholder="admin@example.com">
     </div>
     <div class="field-group">
-      <label>ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ</label>
+      <label>رقم الهاتف</label>
       <input type="tel" id="s-phone" placeholder="0912345678">
     </div>
     <div class="field-group">
-      <label>ط§ظ„ظ…ط¯ظٹظ†ط©</label>
-      <input type="text" id="s-city" placeholder="ط·ط±ط§ط¨ظ„ط³">
+      <label>المدينة</label>
+      <input type="text" id="s-city" placeholder="طرابلس">
     </div>
     <div class="flex gap-3 mt-4">
-      <button class="btn-primary !bg-gray-200 !text-gray-600 !shadow-none hover:!bg-gray-300" onclick="prevStep(0)" style="flex:1">â†’ ط±ط¬ظˆط¹</button>
-      <button class="btn-primary" onclick="nextStep(2)" style="flex:1">ظ…طھط§ط¨ط¹ط© â†’</button>
+      <button class="btn-primary !bg-gray-200 !text-gray-600 !shadow-none hover:!bg-gray-300" onclick="prevStep(0)" style="flex:1">→ رجوع</button>
+      <button class="btn-primary" onclick="nextStep(2)" style="flex:1">متابعة →</button>
     </div>
   </div>
 
   <!-- Step 2: Photo -->
   <div class="step-content" id="step-2">
     <div class="photo-upload" id="photo-upload" onclick="document.getElementById('photo-input').click()">
-      <div class="placeholder" id="photo-placeholder">ًں“·</div>
+      <div class="placeholder" id="photo-placeholder">📷</div>
       <img id="photo-preview" class="hidden">
     </div>
     <input type="file" id="photo-input" accept="image/*" class="hidden" onchange="previewPhoto(event)">
-    <p class="text-sm text-gray-500 text-center mb-6">ط§ط®طھط± طµظˆط±ط© ط´ط®طµظٹط© ظ„ظ„ظ…ط´ط±ظپ (ط§ط®طھظٹط§ط±ظٹ)</p>
+    <p class="text-sm text-gray-500 text-center mb-6">اختر صورة شخصية للمشرف (اختياري)</p>
     <div class="flex gap-3 mt-4">
-      <button class="btn-primary !bg-gray-200 !text-gray-600 !shadow-none hover:!bg-gray-300" onclick="prevStep(1)" style="flex:1">â†’ ط±ط¬ظˆط¹</button>
-      <button class="btn-primary" onclick="nextStep(3)" style="flex:1">ظ…طھط§ط¨ط¹ط© â†’</button>
+      <button class="btn-primary !bg-gray-200 !text-gray-600 !shadow-none hover:!bg-gray-300" onclick="prevStep(1)" style="flex:1">→ رجوع</button>
+      <button class="btn-primary" onclick="nextStep(3)" style="flex:1">متابعة →</button>
     </div>
   </div>
 
@@ -125,36 +125,36 @@ body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-heigh
   <div class="step-content" id="step-3">
     <div class="bg-gray-50 rounded-2xl p-5 mb-5 text-sm">
       <div class="flex items-center gap-3 mb-4">
-        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg" id="confirm-avatar">ًں‘¤</div>
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg" id="confirm-avatar">👤</div>
         <div>
           <div class="font-bold text-gray-900" id="confirm-username">â€”</div>
           <div class="text-gray-500 text-xs" id="confirm-email">â€”</div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3 text-xs">
-        <div><span class="text-gray-400">ط§ظ„ظ‡ط§طھظپ:</span> <span id="confirm-phone" class="font-medium">â€”</span></div>
-        <div><span class="text-gray-400">ط§ظ„ظ…ط¯ظٹظ†ط©:</span> <span id="confirm-city" class="font-medium">â€”</span></div>
-        <div class="col-span-2"><span class="text-gray-400">ظ‚ظˆط© ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±:</span> <span id="confirm-pw" class="font-medium text-green-600">â€”</span></div>
+        <div><span class="text-gray-400">الهاتف:</span> <span id="confirm-phone" class="font-medium">—</span></div>
+        <div><span class="text-gray-400">المدينة:</span> <span id="confirm-city" class="font-medium">—</span></div>
+        <div class="col-span-2"><span class="text-gray-400">قوة كلمة المرور:</span> <span id="confirm-pw" class="font-medium text-green-600">—</span></div>
       </div>
     </div>
     <div class="secured-badge mb-4">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-      <span>ط¬ظ…ظٹط¹ ط§ظ„ط¨ظٹط§ظ†ط§طھ ط³طھظڈط´ظپط± ظˆطھظڈط­ظپط¸ ظپظٹ ط§ظ„ط®ط²ظ†ط© ط§ظ„ط¢ظ…ظ†ط© (vault)</span>
+      <span>جميع البيانات ستُشفر وتُحفظ في الخزنة الآمنة (vault)</span>
     </div>
     <button class="btn-primary" id="submit-btn" onclick="submitSetup()">
-      <span id="submit-text">âœ… ط¥ظ†ط´ط§ط، ط­ط³ط§ط¨ ط§ظ„ظ…ط´ط±ظپ</span>
-      <span id="submit-loading" class="hidden">âڈ³ ط¬ط§ط±ظٹ ط§ظ„ط¥ظ†ط´ط§ط،...</span>
+      <span id="submit-text">✅ إنشاء حساب المشرف</span>
+      <span id="submit-loading" class="hidden">⏳ جاري الإنشاء...</span>
     </button>
-    <button class="btn-primary !bg-gray-200 !text-gray-600 !shadow-none hover:!bg-gray-300 mt-2" onclick="prevStep(2)" style="flex:1">â†’ طھط¹ط¯ظٹظ„ ط§ظ„ط¨ظٹط§ظ†ط§طھ</button>
+    <button class="btn-primary !bg-gray-200 !text-gray-600 !shadow-none hover:!bg-gray-300 mt-2" onclick="prevStep(2)" style="flex:1">→ تعديل البيانات</button>
     <button onclick="window.location.href='/admin.html'" class="w-full mt-2 py-3 rounded-2xl text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all">
-      âڈ­ طھط®ط·ظٹ ظˆظپطھط­ ظ„ظˆط­ط© ط§ظ„ط¥ط¯ط§ط±ط©
+      ⏭ تخطي وفتح لوحة الإدارة
     </button>
   </div>
 </div>
 
     <script src="/js/setup-1.js?v=20260809"></script>
 
-<!-- طµظ†ط¯ظˆظ‚ ط§ظ„ط­ظˆط§ط± ط§ظ„طھظپط§ط¹ظ„ظٹ ط§ظ„ظ…ظˆط­ط¯ (Custom Dialog) -->
+<!-- صندوق الحوار التفاعلي الموحد (Custom Dialog) -->
 <div id="custom-dialog" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm hidden" onclick="if(event.target===this)this.classList.add('hidden')">
     <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden" style="box-shadow:0 32px 80px rgba(0,0,0,0.18)">
         <div class="p-6 text-center">
