@@ -7,16 +7,35 @@ const tokenRepository = require('../../infrastructure/persistence/repositories/t
 const vendorRepository = require('../../infrastructure/persistence/repositories/vendorRepository');
 const authService = require('../../application/services/authService');
 
+const TOKEN_TTL_MS = 2 * 60 * 60 * 1000;
 const validPageTokens = new Set();
+const secret = config.encryptionKey;
+
+function signToken(payload) {
+  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+}
 
 function generatePageToken() {
   const token = crypto.randomBytes(32).toString('hex');
-  validPageTokens.add(token);
-  return token;
+  const t = Date.now().toString(36);
+  return t + '.' + token + '.' + signToken(t + '.' + token);
 }
 
 function verifyPageToken(token) {
-  return token && validPageTokens.has(token);
+  if (!token) return false;
+  if (validPageTokens.has(token)) return true;
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  const [t, tok, sig] = parts;
+  if (!t || !tok || !sig) return false;
+  const expected = signToken(t + '.' + tok);
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+  const issuedAt = parseInt(t, 36);
+  if (!issuedAt || Date.now() - issuedAt > TOKEN_TTL_MS) return false;
+  validPageTokens.add(token);
+  return true;
 }
 
 setInterval(() => { validPageTokens.clear(); }, 3600000);
