@@ -235,6 +235,42 @@ const ALTER_STATEMENTS = [
   "ALTER TABLE orders ADD COLUMN points_used INTEGER DEFAULT 0"
 ];
 
+const INDEX_SQL = `
+  CREATE INDEX IF NOT EXISTS idx_vendors_status ON vendors(status);
+  CREATE INDEX IF NOT EXISTS idx_vendors_delete_requested ON vendors(delete_requested);
+
+  CREATE INDEX IF NOT EXISTS idx_categories_vendor ON vendor_categories(vendor_id);
+
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_vendor ON subscriptions(vendor_id);
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_vendor_name ON subscriptions(vendor_id, name);
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_cat_active ON subscriptions(cat_id, is_active);
+
+  CREATE INDEX IF NOT EXISTS idx_orders_vendor ON orders(vendor_id);
+  CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+  CREATE INDEX IF NOT EXISTS idx_orders_vendor_status ON orders(vendor_id, status);
+
+  CREATE INDEX IF NOT EXISTS idx_activity_vendor ON activity_log(vendor_id);
+  CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log(created_at);
+
+  CREATE INDEX IF NOT EXISTS idx_tokens_vendor ON auth_tokens(vendor_id);
+  CREATE INDEX IF NOT EXISTS idx_tokens_created ON auth_tokens(created_at);
+
+  CREATE INDEX IF NOT EXISTS idx_ratings_sub ON ratings(subscription_id);
+
+  CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status);
+
+  CREATE INDEX IF NOT EXISTS idx_customer_txn_phone ON customer_point_transactions(customer_phone);
+
+  CREATE INDEX IF NOT EXISTS idx_vendor_txn_vendor ON vendor_point_transactions(vendor_id);
+
+  CREATE INDEX IF NOT EXISTS idx_reductions_vendor_expiry ON vendor_commission_reductions(vendor_id, expires_at);
+
+  CREATE INDEX IF NOT EXISTS idx_offers_sub ON customer_offers(subscription_id);
+
+  CREATE INDEX IF NOT EXISTS idx_views_sub ON subscription_views(subscription_id);
+  CREATE INDEX IF NOT EXISTS idx_views_created ON subscription_views(created_at);
+`;
+
 const defaultPointSettings = [
   ['customer_points_per_order', '5'],
   ['customer_point_discount', '0.5'],
@@ -278,6 +314,7 @@ if (!turso) {
   for (const s of ALTER_STATEMENTS) {
     try { db.exec(s); } catch (e) {}
   }
+  try { db.exec(INDEX_SQL); } catch (e) { console.warn('[db] فشل إنشاء الفهارس:', e.message); }
   migrateOrdersScreenshotSync();
   for (const [k, v] of defaultPointSettings) {
     db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run(k, v);
@@ -394,6 +431,11 @@ async function ensureSchema() {
       await qExec("ALTER TABLE orders_new RENAME TO orders");
     }
   } catch (e) {}
+  try {
+    await qExec(INDEX_SQL);
+  } catch (e) {
+    console.warn('[db] فشل إنشاء الفهارس:', e.message);
+  }
   for (const [k, v] of defaultPointSettings) {
     await qRun('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [k, v]);
   }
