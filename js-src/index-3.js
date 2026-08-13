@@ -306,7 +306,7 @@ function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
                 if (addBtn) { addBtn.disabled = false; addBtn.classList.remove('opacity-50', 'pointer-events-none'); }
             }
             var img = document.getElementById('sub-detail-img');
-            if (sub.image_path) { img.innerHTML = '<img src="' + escAttr(sub.image_path) + '" class="w-full h-auto">'; }
+            if (sub.image_path) { img.innerHTML = '<img src="' + escAttr(sub.image_path) + '" class="w-full h-40 object-contain bg-deep-50">'; }
             else { img.innerHTML = '<div class="w-full h-44 bg-gradient-to-br from-deep-50 to-brand-50 flex items-center justify-center text-4xl">📦</div>'; }
             document.getElementById('sub-detail-modal').classList.remove('hidden');
             // تسجيل المشاهدة
