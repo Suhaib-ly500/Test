@@ -52,18 +52,25 @@ function vaultExists() {
 
 function getMasterPassword() {
   const envPass = process.env.VAULT_PASSWORD;
+  if (!vaultExists()) {
+    if (envPass && envPass.length >= 8) return envPass;
+    if (!envPass) {
+      console.error('❌ وضع الاستضافة (بدون vault.enc) يتطلب VAULT_PASSWORD في متغيرات البيئة');
+      console.error('   أضف في إعدادات المنصة: VAULT_PASSWORD = أي كلمة مرور قوية (8 أحرف على الأقل)');
+      process.exit(1);
+    }
+    console.error('❌ VAULT_PASSWORD يجب أن تكون 8 أحرف على الأقل');
+    console.error('   القيمة الحالية بطول ' + envPass.length + ' حرفاً');
+    process.exit(1);
+  }
   if (envPass && envPass.length >= 8) return envPass;
-  if (!vaultExists()) return 'matrix-pro-default-vault-key-2026';
   if (!envPass) {
     console.error('❌ الخزنة موجودة لكن لم يتم تعيين VAULT_PASSWORD');
     console.error('   قم بتعيينها: $env:VAULT_PASSWORD="your-password"');
     process.exit(1);
   }
-  if (envPass.length < 8) {
-    console.error('❌ VAULT_PASSWORD يجب أن تكون 8 أحرف على الأقل');
-    process.exit(1);
-  }
-  return envPass;
+  console.error('❌ VAULT_PASSWORD يجب أن تكون 8 أحرف على الأقل');
+  process.exit(1);
 }
 
 const DEFAULT_STRUCTURE = {
