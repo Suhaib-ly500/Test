@@ -265,7 +265,7 @@ for (const item of items) {
         await contentRepository.logActivity(Number(item.vendor_id), 'طلب جديد', 'طلب جديد من "' + customer_name + '" لـ "' + item.subscription_name + '" بقيمة ' + item.amount + ' د.ل');
       }
       let pointsEarned = 0;
-      if (customer_phone) pointsEarned = await pointsService.awardCustomerPoints(customer_phone, 0);
+      // النقاط لا تُمنح عند الشراء — تُمنح فقط عند تأكيد المزود/الإدارة استكمال الطلب
       if (points_used && customer_phone) await pointsService.redeemCustomerPoints(customer_phone, points_used);
       const vendorIds = [...new Set(items.map(i => Number(i.vendor_id)))];
       const vendors = await vendorRepository.findManyByIds(vendorIds);
