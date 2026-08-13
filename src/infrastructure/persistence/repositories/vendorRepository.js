@@ -47,6 +47,10 @@ async function getCommission(id) {
   return qOne('SELECT commission_rate FROM vendors WHERE id = ?', [id]);
 }
 
+async function listAllRates() {
+  return q('SELECT id, commission_rate FROM vendors');
+}
+
 async function setDeleteRequested(id) {
   return qRun('UPDATE vendors SET delete_requested = 1 WHERE id = ?', [id]);
 }
@@ -158,6 +162,7 @@ module.exports = {
   setCommission,
   resetCommission,
   getCommission,
+  listAllRates,
   setDeleteRequested,
   getDeleteRequested,
   listAll,

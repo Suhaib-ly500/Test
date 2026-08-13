@@ -30,6 +30,10 @@ async function getCommission(id) {
   return qOne('SELECT commission_rate FROM subscriptions WHERE id = ?', [id]);
 }
 
+async function listAllWithCommission() {
+  return q('SELECT id, name, vendor_id, cat_id, commission_rate FROM subscriptions');
+}
+
 async function create({ vendorId, catId, name, description, price, duration, image }) {
   return qRun('INSERT INTO subscriptions (vendor_id, cat_id, name, description, price, duration, image_path) VALUES (?, ?, ?, ?, ?, ?, ?)', [vendorId, catId || null, name, description || '', price, duration || '', image]);
 }
@@ -49,6 +53,10 @@ async function deleteById(id, vendorId) {
 async function countByVendor(vendorId) {
   const r = await qOne('SELECT COUNT(*) as c FROM subscriptions WHERE vendor_id = ?', [vendorId]);
   return r ? r.c : 0;
+}
+
+async function countsByVendor() {
+  return q('SELECT vendor_id, COUNT(*) as c FROM subscriptions GROUP BY vendor_id');
 }
 
 async function countAll() {
@@ -201,7 +209,7 @@ async function deleteAllViews() {
 
 module.exports = {
   listByVendor, findById, findByIdAndVendor, findByNameAndVendor, findActiveByIdAndVendor, findActiveByNameAndVendor,
-  getCommission, create, update, updateWithActive, deleteById, countByVendor, countAll, countActive, incrementViews,
+  getCommission, listAllWithCommission, create, update, updateWithActive, deleteById, countByVendor, countsByVendor, countAll, countActive, incrementViews,
   listAll, deleteAll, searchOfferings, listCategoriesWithSubs,
   findFeatured, listFeaturedActive, listFeaturedAll, addFeatured, removeFeatured, deleteAllFeatured,
   findActiveOfferForSub, listOffersActive, listOffersAll, createOffer, deleteOffer, deleteOffersBySub, deleteAllOffers,

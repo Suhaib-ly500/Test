@@ -119,6 +119,10 @@ async function sumActiveReductions(vendorId, nowIso) {
   return qOne('SELECT COALESCE(SUM(reduction_percent),0) as total FROM vendor_commission_reductions WHERE vendor_id=? AND expires_at > ?', [vendorId, nowIso]);
 }
 
+async function sumActiveReductionsGrouped(nowIso) {
+  return q('SELECT vendor_id, COALESCE(SUM(reduction_percent),0) as total FROM vendor_commission_reductions WHERE expires_at > ? GROUP BY vendor_id', [nowIso]);
+}
+
 async function insertReduction(vendorId, reductionPercent, expiresIso) {
   return qRun('INSERT INTO vendor_commission_reductions (vendor_id, reduction_percent, expires_at) VALUES (?, ?, ?)', [vendorId, reductionPercent, expiresIso]);
 }
@@ -146,6 +150,6 @@ module.exports = {
   updateVendorDailySales, resetVendorDailySales, insertVendorTxn, sumVendorEarnedToday,
   listAllVendorPoints, listAllReductions, deleteAllVendorPoints, deleteAllVendorTxns, deleteAllReductions,
   deleteVendorPoints, deleteVendorTxns, deleteVendorReductions,
-  listActiveReductions, sumActiveReductions, insertReduction, redeemReduction,
+  listActiveReductions, sumActiveReductions, sumActiveReductionsGrouped, insertReduction, redeemReduction,
   getSetting: getSettingValue
 };

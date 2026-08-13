@@ -140,9 +140,11 @@
         setInterval(updateClock, 1000);
 
         function loadStats() {
-            fetch('/api/admin/stats', { headers: { 'Authorization': API_TOKEN } })
+            const statsSeq = (loadStats._seq = (loadStats._seq || 0) + 1);
+            return fetch('/api/admin/stats', { headers: { 'Authorization': API_TOKEN } })
                 .then(r => r.json()).then(d => {
-                    if (!d.success) return;
+                    if (statsSeq !== loadStats._seq || !d.success) return;
+                    pendingVendorsCount = d.stats.pendingVendors;
                     document.getElementById('stat-vendors').textContent = d.stats.vendorsCount;
                     document.getElementById('stat-active').textContent = d.stats.activeVendors;
                     document.getElementById('stat-orders').textContent = d.stats.ordersCount;
@@ -191,9 +193,10 @@
         }
 
         function loadVendors() {
+            const seq = ++vendorsRefreshSeq;
             fetch('/api/admin/vendors', { headers: { 'Authorization': API_TOKEN } })
                 .then(r => r.json()).then(d => {
-                    if (!d.success) return;
+                    if (seq !== vendorsRefreshSeq || !d.success) return;
                     vendorsData = d.vendors;
                     const pending = d.vendors.filter(v => v.status === 'pending');
                     const others = d.vendors.filter(v => v.status !== 'pending');
@@ -424,9 +427,10 @@
         }
 
         function loadOrders() {
+            const seq = ++ordersRefreshSeq;
             fetch('/api/admin/orders', { headers: { 'Authorization': API_TOKEN } })
                 .then(r => r.json()).then(d => {
-                    if (!d.success) return;
+                    if (seq !== ordersRefreshSeq || !d.success) return;
                     const tbody = document.getElementById('orders-table-body');
                     tbody.innerHTML = d.orders.map(o => {
                         const badgeClass = o.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : o.status === 'pending' ? 'bg-amber-50 text-amber-600' : o.status === 'awaiting_verification' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600';
@@ -1404,18 +1408,19 @@
 
         // ====== متابعة الطلبات الجديدة (إشعار فوري للأدمن) ======
         let lastKnownOrdersCount = 0;
+        let ordersRefreshSeq = 0;
+        let vendorsRefreshSeq = 0;
+        let pendingVendorsCount = 0;
         function checkNewOrders() {
             if (!isLoggedIn) return;
-            fetch('/api/admin/orders', { headers: { 'Authorization': API_TOKEN } })
+            fetch('/api/admin/orders/count', { headers: { 'Authorization': API_TOKEN } })
                 .then(r => r.json()).then(d => {
                     if (!d.success) return;
-                    const currentCount = d.orders.length;
+                    const currentCount = d.count;
                     if (lastKnownOrdersCount > 0 && currentCount > lastKnownOrdersCount) {
-                        const newOnes = d.orders.slice(0, currentCount - lastKnownOrdersCount);
-                        newOnes.forEach(o => {
-                            sendDesktopNotification('🛒 طلب جديد', 'من ' + o.customer_name + ' - ' + o.subscription_name + ' (' + o.amount + ' د.ل)');
-                        });
+                        sendDesktopNotification('🛒 طلب جديد', 'وصل ' + (currentCount - lastKnownOrdersCount) + ' طلب جديد');
                         CustomDialog.show({ title: '🛒 طلب جديد', message: 'وصل ' + (currentCount - lastKnownOrdersCount) + ' طلب جديد', type: 'alert', style: 'info' });
+                        loadOrders();
                     }
                     lastKnownOrdersCount = currentCount;
                 });
@@ -1508,6 +1513,13 @@
         }
 
         // التحميل التلقائي
-        setInterval(() => { if (isLoggedIn) { loadStats(); loadVendors(); } }, 15000);
+        let lastKnownPendingVendors = -1;
+        setInterval(() => {
+            if (!isLoggedIn) return;
+            loadStats().then(() => {
+                if (lastKnownPendingVendors >= 0 && pendingVendorsCount !== lastKnownPendingVendors) loadVendors();
+                lastKnownPendingVendors = pendingVendorsCount;
+            });
+        }, 15000);
         setInterval(() => { if (isLoggedIn) { checkNewOrders(); } }, 8000);
     

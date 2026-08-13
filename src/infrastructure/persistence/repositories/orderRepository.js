@@ -61,9 +61,17 @@ async function countByVendor(vendorId) {
   return r ? r.c : 0;
 }
 
+async function countsByVendor() {
+  return q('SELECT vendor_id, COUNT(*) as c FROM orders GROUP BY vendor_id');
+}
+
 async function sumCompletedByVendor(vendorId) {
   const r = await qOne("SELECT COALESCE(SUM(amount), 0) as t FROM orders WHERE vendor_id = ? AND status = 'completed'", [vendorId]);
   return r ? r.t : 0;
+}
+
+async function sumsCompletedByVendor() {
+  return q("SELECT vendor_id, COALESCE(SUM(amount), 0) as t FROM orders WHERE status = 'completed' GROUP BY vendor_id");
 }
 
 async function sumCompleted() {
@@ -82,6 +90,6 @@ async function deleteAll() {
 module.exports = {
   insert, insertMany, listByVendor, listAllWithVendor, findById, findByIdAndVendor,
   updateStatus, updateStatusAdmin, updateToAwaiting, deleteById,
-  countAll, countByStatus, countCompletedAndId: countByStatus, countByVendor, sumCompletedByVendor, sumCompleted,
+  countAll, countByStatus, countCompletedAndId: countByStatus, countByVendor, countsByVendor, sumCompletedByVendor, sumsCompletedByVendor, sumCompleted,
   clearCompletedRevenue, deleteAll
 };

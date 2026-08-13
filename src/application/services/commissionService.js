@@ -26,4 +26,15 @@ async function effectiveRate(vendorId, subId, catId) {
   });
 }
 
-module.exports = { effectiveRate };
+// Same rules as effectiveRate but with pre-fetched values (no DB calls)
+function effectiveRateBatched({ subRate, catRate, vendorRate, globalRate, reductionTotal }) {
+  return computeEffectiveRate({
+    subRate: subRate === null || subRate === undefined ? undefined : subRate,
+    catRate: catRate === null || catRate === undefined ? undefined : catRate,
+    vendorRate: vendorRate === null || vendorRate === undefined ? undefined : vendorRate,
+    globalRate,
+    reductionTotal
+  });
+}
+
+module.exports = { effectiveRate, effectiveRateBatched };

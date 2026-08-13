@@ -12,6 +12,10 @@ async function getCommission(id) {
   return qOne('SELECT commission_rate FROM vendor_categories WHERE id = ?', [id]);
 }
 
+async function listAllRates() {
+  return q('SELECT id, commission_rate FROM vendor_categories');
+}
+
 async function create(vendorId, name, description, image) {
   return qRun('INSERT INTO vendor_categories (vendor_id, name, description, image_path) VALUES (?, ?, ?, ?)', [vendorId, name, description || '', image]);
 }
@@ -42,4 +46,4 @@ async function deleteAll() {
   return qRun('DELETE FROM vendor_categories');
 }
 
-module.exports = { listByVendor, findById, getCommission, create, update, deleteById, listSubIds, deleteSubsByCat, deleteOffersForSubs, deleteAll };
+module.exports = { listByVendor, findById, getCommission, listAllRates, create, update, deleteById, listSubIds, deleteSubsByCat, deleteOffersForSubs, deleteAll };

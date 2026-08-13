@@ -1,5 +1,5 @@
 ﻿const bcrypt = require('bcryptjs');
-const { getSetting, setSetting } = require('../../infrastructure/persistence/db');
+const { getSetting, setSetting, qOne } = require('../../infrastructure/persistence/db');
 const vendorRepository = require('../../infrastructure/persistence/repositories/vendorRepository');
 const categoryRepository = require('../../infrastructure/persistence/repositories/categoryRepository');
 const subscriptionRepository = require('../../infrastructure/persistence/repositories/subscriptionRepository');
@@ -65,45 +65,78 @@ module.exports = (app) => {
 
   app.get('/api/admin/orders', requireAdmin, async (req, res, next) => {
     try {
-      const orders = await orderRepository.listAllWithVendor();
+      const [orders, subs, cats, vendors, reductions, globalRateRaw] = await Promise.all([
+        orderRepository.listAllWithVendor(),
+        subscriptionRepository.listAllWithCommission(),
+        categoryRepository.listAllRates(),
+        vendorRepository.listAllRates(),
+        pointsRepository.sumActiveReductionsGrouped(new Date().toISOString()),
+        getSetting('global_commission_rate', '0')
+      ]);
+      const subMap = new Map();
+      for (const s of subs) subMap.set((s.vendor_id || 0) + '|' + s.name, s);
+      const catMap = new Map(cats.map(c => [c.id, Number(c.commission_rate)]));
+      const vendorMap = new Map(vendors.map(v => [v.id, v.commission_rate === null || v.commission_rate === undefined ? null : Number(v.commission_rate)]));
+      const reductionMap = new Map(reductions.map(r => [r.vendor_id, Number(r.total) || 0]));
+      const globalRate = parseFloat(globalRateRaw) || 0;
       const ordersWithCommission = [];
       for (const o of orders) {
-        const sub = o.subscription_name ? await subscriptionRepository.findByNameAndVendor(o.subscription_name, o.vendor_id) : null;
-        const rate = await commissionService.effectiveRate(o.vendor_id || 0, sub ? sub.id : null, sub ? sub.cat_id : null);
+        const sub = o.subscription_name ? subMap.get((o.vendor_id || 0) + '|' + o.subscription_name) : null;
+        const rate = commissionService.effectiveRateBatched({
+          subRate: sub && sub.commission_rate !== null && sub.commission_rate !== undefined ? Number(sub.commission_rate) : null,
+          catRate: sub && sub.cat_id ? (catMap.has(sub.cat_id) ? catMap.get(sub.cat_id) : null) : null,
+          vendorRate: o.vendor_id ? (vendorMap.has(o.vendor_id) ? vendorMap.get(o.vendor_id) : null) : null,
+          globalRate,
+          reductionTotal: o.vendor_id ? (reductionMap.get(o.vendor_id) || 0) : 0
+        });
         ordersWithCommission.push({ ...o, customer_name: decrypt(o.customer_name), customer_phone: decrypt(o.customer_phone), commission_rate: rate, commission_amount: parseFloat((o.amount * rate / 100).toFixed(2)), vendor_share: parseFloat((o.amount * (100 - rate) / 100).toFixed(2)) });
       }
       res.json({ success: true, orders: ordersWithCommission });
     } catch (e) { next(e); }
   });
 
+  app.get('/api/admin/orders/count', requireAdmin, async (req, res, next) => {
+    try {
+      const count = await orderRepository.countAll();
+      res.json({ success: true, count });
+    } catch (e) { next(e); }
+  });
+
   app.get('/api/admin/report-details', requireAdmin, async (req, res, next) => {
     try {
-      const report = {
-        totalVendors: await vendorRepository.countNonAdmin(),
-        activeVendors: await vendorRepository.countActiveNonAdmin(),
-        pendingVendors: await vendorRepository.countPending(),
-        rejectedVendors: await vendorRepository.countRejected(),
-        totalSubs: await subscriptionRepository.countAll(),
-        activeSubs: await subscriptionRepository.countActive(),
-        totalOrders: await orderRepository.countAll(),
-        completedOrders: await orderRepository.countByStatus('completed'),
-        pendingOrders: await orderRepository.countByStatus('pending'),
-        cancelledOrders: await orderRepository.countByStatus('cancelled'),
-        totalRevenue: await orderRepository.sumCompleted()
-      };
-      res.json({ success: true, report });
+      const row = await qOne(`SELECT
+        (SELECT COUNT(*) FROM vendors WHERE username != 'admin') AS totalVendors,
+        (SELECT COUNT(*) FROM vendors WHERE status='active' AND username != 'admin') AS activeVendors,
+        (SELECT COUNT(*) FROM vendors WHERE status='pending') AS pendingVendors,
+        (SELECT COUNT(*) FROM vendors WHERE status='rejected') AS rejectedVendors,
+        (SELECT COUNT(*) FROM subscriptions) AS totalSubs,
+        (SELECT COUNT(*) FROM subscriptions WHERE is_active=1) AS activeSubs,
+        (SELECT COUNT(*) FROM vendor_categories) AS totalCategories,
+        (SELECT COUNT(*) FROM orders) AS totalOrders,
+        (SELECT COUNT(*) FROM orders WHERE status='completed') AS completedOrders,
+        (SELECT COUNT(*) FROM orders WHERE status='pending') AS pendingOrders,
+        (SELECT COUNT(*) FROM orders WHERE status='cancelled') AS cancelledOrders,
+        (SELECT COALESCE(SUM(amount),0) FROM orders WHERE status='completed') AS totalRevenue,
+        (SELECT COALESCE(SUM(amount),0) FROM orders WHERE status='pending') AS pendingRevenue,
+        (SELECT COALESCE(SUM(views),0) FROM subscriptions) AS totalViews`);
+      res.json({ success: true, report: row });
     } catch (e) { next(e); }
   });
 
   app.get('/api/admin/vendors', requireAdmin, async (req, res, next) => {
     try {
       const vendors = await vendorRepository.listAll();
+      const [ordersCounts, completedTotals, subsCounts] = await Promise.all([
+        orderRepository.countsByVendor(),
+        orderRepository.sumsCompletedByVendor(),
+        subscriptionRepository.countsByVendor()
+      ]);
+      const ordersCountMap = new Map(ordersCounts.map(r => [r.vendor_id, r.c]));
+      const completedMap = new Map(completedTotals.map(r => [r.vendor_id, r.t]));
+      const subsCountMap = new Map(subsCounts.map(r => [r.vendor_id, r.c]));
       const vendorsWithStats = [];
       for (const v of vendors) {
-        const ordersCount = await orderRepository.countByVendor(v.id);
-        const completedTotal = await orderRepository.sumCompletedByVendor(v.id);
-        const subsCount = await subscriptionRepository.countByVendor(v.id);
-        vendorsWithStats.push({ ...v, orders_count: ordersCount, completed_total: completedTotal, subs_count: subsCount });
+        vendorsWithStats.push({ ...v, orders_count: ordersCountMap.get(v.id) || 0, completed_total: completedMap.get(v.id) || 0, subs_count: subsCountMap.get(v.id) || 0 });
       }
       res.json({ success: true, vendors: vendorsWithStats });
     } catch (e) { next(e); }
@@ -178,18 +211,17 @@ module.exports = (app) => {
 
   app.get('/api/admin/stats', requireAdmin, async (req, res, next) => {
     try {
-      const stats = {
-        vendorsCount: await vendorRepository.countAll(),
-        activeVendors: await vendorRepository.countActive(),
-        pendingVendors: await vendorRepository.countPending(),
-        ordersCount: await orderRepository.countAll(),
-        totalRevenue: await orderRepository.sumCompleted(),
-        pendingOrders: await orderRepository.countByStatus('pending'),
-        awaitingVerification: await orderRepository.countByStatus('awaiting_verification'),
-        deleteRequests: await vendorRepository.countDeleteRequests(),
-        totalViews: await subscriptionRepository.totalViews()
-      };
-      res.json({ success: true, stats });
+      const row = await qOne(`SELECT
+        (SELECT COUNT(*) FROM vendors) AS vendorsCount,
+        (SELECT COUNT(*) FROM vendors WHERE status='active') AS activeVendors,
+        (SELECT COUNT(*) FROM vendors WHERE status='pending') AS pendingVendors,
+        (SELECT COUNT(*) FROM orders) AS ordersCount,
+        (SELECT COALESCE(SUM(amount),0) FROM orders WHERE status='completed') AS totalRevenue,
+        (SELECT COUNT(*) FROM orders WHERE status='pending') AS pendingOrders,
+        (SELECT COUNT(*) FROM orders WHERE status='awaiting_verification') AS awaitingVerification,
+        (SELECT COUNT(*) FROM vendors WHERE delete_requested=1) AS deleteRequests,
+        (SELECT COALESCE(SUM(views),0) FROM subscriptions) AS totalViews`);
+      res.json({ success: true, stats: row });
     } catch (e) { next(e); }
   });
 
