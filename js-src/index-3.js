@@ -238,6 +238,8 @@ function escJs(s) { return JSON.stringify(String(s == null ? '' : s)); }
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(m.msg).catch(function() { fallbackCopy(m.msg); });
                     } else { fallbackCopy(m.msg); }
+                    var sm = document.getElementById('order-success-modal');
+                    if (sm) sm.classList.add('hidden');
                     return;
                 }
             } catch (e) {}
