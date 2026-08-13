@@ -36,3 +36,6 @@ points-system-plan.md
 *.pdf
 .env.turso
 start-local.ps1
+
+auth
+auth-wal
