@@ -185,6 +185,14 @@ module.exports = (app) => {
     } catch (e) { next(e); }
   });
 
+  app.post('/api/admin/vendors/:id/reject-delete', requireAdmin, async (req, res, next) => {
+    try {
+      await vendorRepository.clearDeleteRequested(req.params.id);
+      await contentRepository.logActivity(0, 'رفض طلب حذف', 'تم رفض طلب حذف المزود رقم ' + req.params.id);
+      res.json({ success: true, message: 'تم رفض طلب الحذف' });
+    } catch (e) { next(e); }
+  });
+
   app.delete('/api/admin/orders/:id', requireAdmin, async (req, res, next) => {
     try {
       await orderRepository.deleteById(req.params.id);

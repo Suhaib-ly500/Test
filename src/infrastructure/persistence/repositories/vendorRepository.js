@@ -55,6 +55,10 @@ async function setDeleteRequested(id) {
   return qRun('UPDATE vendors SET delete_requested = 1 WHERE id = ?', [id]);
 }
 
+async function clearDeleteRequested(id) {
+  return qRun('UPDATE vendors SET delete_requested = 0 WHERE id = ?', [id]);
+}
+
 async function getDeleteRequested(id) {
   const v = await qOne('SELECT delete_requested FROM vendors WHERE id = ?', [id]);
   return v ? v.delete_requested : 0;
@@ -164,6 +168,7 @@ module.exports = {
   getCommission,
   listAllRates,
   setDeleteRequested,
+  clearDeleteRequested,
   getDeleteRequested,
   listAll,
   listAdminVendors,

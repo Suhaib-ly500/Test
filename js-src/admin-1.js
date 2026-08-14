@@ -422,7 +422,7 @@
         async function deleteVendor(id) {
             const ok = await CustomDialog.show({ title: 'حذف مزود', message: 'تأكيد حذف هذا المزود وجميع بياناته؟', type: 'confirm', style: 'error', confirmText: 'نعم، احذف' });
             if (!ok) return;
-            fetch('/api/admin/vendors/' + id, { method: 'DELETE', headers: { 'Authorization': API_TOKEN } })
+            fetch('/api/admin/vendors/' + id + '/delete', { method: 'POST', headers: { 'Authorization': API_TOKEN } })
                 .then(r => r.json()).then(d => { if (d.success) loadVendors(); });
         }
 
@@ -757,14 +757,14 @@
         async function approveDelete(id) {
             const ok = await CustomDialog.show({ title: 'حذف الحساب', message: 'موافقة على حذف الحساب وجميع بياناته نهائياً؟', type: 'confirm', style: 'error', confirmText: 'نعم، احذف الكل' });
             if (!ok) return;
-            fetch('/api/admin/approve-delete/' + id, { method: 'POST', headers: { 'Authorization': API_TOKEN } })
+            fetch('/api/admin/vendors/' + id + '/approve-delete', { method: 'POST', headers: { 'Authorization': API_TOKEN } })
                 .then(r => r.json()).then(d => { if (d.success) { CustomDialog.success('تم حذف الحساب وجميع بياناته'); loadDeleteRequests(); loadVendors(); loadStats(); } });
         }
 
         async function rejectDelete(id) {
             const ok = await CustomDialog.confirm('رفض طلب حذف الحساب؟');
             if (!ok) return;
-            fetch('/api/admin/reject-delete/' + id, { method: 'POST', headers: { 'Authorization': API_TOKEN } })
+            fetch('/api/admin/vendors/' + id + '/reject-delete', { method: 'POST', headers: { 'Authorization': API_TOKEN } })
                 .then(r => r.json()).then(d => { if (d.success) { CustomDialog.success('تم رفض طلب الحذف'); loadDeleteRequests(); } });
         }
 
