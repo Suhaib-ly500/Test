@@ -24,9 +24,12 @@ try {
 }
 
 const dbPath = path.join(config.root, config.vaultData.DB_PATH || 'matrix-pro.db');
-const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+let db = null;
+if (!turso) {
+  db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+}
 
 const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS vendors (
