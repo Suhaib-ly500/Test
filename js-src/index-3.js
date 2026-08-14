@@ -16,6 +16,7 @@
         let pointsMaxDiscountPercent = 30;
         let appliedPointsDiscount = 0;
         let pointsToUse = 0;
+        let cartPointsPhone = '';
 
         function cartToast(name) {
             const toast = document.getElementById('toast');
@@ -43,10 +44,29 @@
 
         function removeFromCart(index) { cart.splice(index, 1); renderCart(); updateCartBadge(); }
 
+        function clampCartPointsDiscount() {
+            if (appliedPointsDiscount <= 0) return;
+            const cartTotal = cart.reduce(function(s, i) { return s + (parseFloat(i.amount) || 0); }, 0);
+            const maxDiscount = cartTotal * pointsMaxDiscountPercent / 100;
+            if (appliedPointsDiscount > maxDiscount) {
+                appliedPointsDiscount = Math.max(0, maxDiscount);
+                pointsToUse = appliedPointsDiscount > 0 ? Math.ceil(appliedPointsDiscount / pointsDiscountPerPoint) : 0;
+                const useEl = document.getElementById('cart-points-to-use');
+                if (useEl) useEl.value = pointsToUse;
+            }
+            const amtEl = document.getElementById('cart-points-discount-amount');
+            if (amtEl) amtEl.textContent = appliedPointsDiscount.toFixed(2);
+        }
+
         function renderCart() {
             const list = document.getElementById('cart-items-list');
             const footer = document.getElementById('cart-footer');
             if (!cart.length) {
+                appliedPointsDiscount = 0;
+                pointsToUse = 0;
+                document.getElementById('cart-points-discount-info').classList.add('hidden');
+                document.getElementById('cart-points-to-use').value = '0';
+                document.getElementById('cart-points-box').classList.add('hidden');
                 list.innerHTML = '<p class="text-deep-400 text-sm text-center py-8">سلتك فارغة. تصفح الاشتراكات وأضف ما يعجبك!</p>';
                 footer.classList.add('hidden'); return;
             }
@@ -60,7 +80,13 @@
                     '<span class="text-sm font-bold text-brand shrink-0">' + (item.amount || 0) + ' د.ل</span>' +
                     '<button onclick="removeFromCart(' + i + ')" class="text-red-400 hover:text-red-600 smooth-transition p-1.5 hover:bg-red-50 rounded-xl"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>';
             }).join('');
-            document.getElementById('cart-total').textContent = total + ' د.ل';
+            clampCartPointsDiscount();
+            const totalEl = document.getElementById('cart-total');
+            if (appliedPointsDiscount > 0) {
+                totalEl.innerHTML = '<span class="line-through text-gray-400 text-sm ml-2">' + total.toFixed(2) + ' د.ل</span>' + (total - appliedPointsDiscount).toFixed(2) + ' د.ل';
+            } else {
+                totalEl.textContent = total + ' د.ل';
+            }
         }
 
         function openCart() { renderCart(); document.getElementById('cart-modal').classList.remove('hidden'); }
@@ -81,14 +107,26 @@
             document.getElementById('cart-modal').classList.add('hidden');
             document.getElementById('cart-confirm-note').classList.add('hidden');
             document.getElementById('terms-confirm-note').classList.add('hidden');
-            appliedPointsDiscount = 0;
-            pointsToUse = 0;
-            document.getElementById('points-to-use').value = '0';
-            document.getElementById('points-section').classList.add('hidden');
-            document.getElementById('points-discount-info').classList.add('hidden');
             let total = 0;
             const summary = document.getElementById('checkout-summary');
-            summary.innerHTML = cart.map(function(item) { total += parseFloat(item.amount) || 0; return '<div class="flex justify-between text-xs"><span class="text-deep-500">' + (item.subscription_name || '') + '</span><span class="font-bold text-deep">' + (item.amount || 0) + ' د.ل</span></div>'; }).join('') + '<div class="flex justify-between text-sm font-bold border-t border-deep-200 pt-2 mt-2"><span class="text-deep">المجموع</span><span class="text-brand">' + total + ' د.ل</span></div>';
+            summary.innerHTML = cart.map(function(item) { total += parseFloat(item.amount) || 0; return '<div class="flex justify-between text-xs"><span class="text-deep-500">' + (item.subscription_name || '') + '</span><span class="font-bold text-deep">' + (item.amount || 0) + ' د.ل</span></div>'; }).join('');
+            const totalRow = '<div class="flex justify-between text-sm font-bold border-t border-deep-200 pt-2 mt-2"><span class="text-deep">المجموع</span><span class="text-brand">' + (appliedPointsDiscount > 0 ? '<span class="line-through text-gray-400 text-xs ml-2">' + total.toFixed(2) + ' د.ل</span>' + (total - appliedPointsDiscount).toFixed(2) + ' د.ل' : total + ' د.ل') + '</span></div>';
+            summary.innerHTML += totalRow;
+            if (appliedPointsDiscount > 0) {
+                document.getElementById('points-section').classList.remove('hidden');
+                document.getElementById('points-balance').textContent = customerPoints + ' نقطة';
+                document.getElementById('points-to-use').value = pointsToUse;
+                document.getElementById('points-discount-amount').textContent = appliedPointsDiscount.toFixed(2);
+                document.getElementById('points-discount-info').classList.remove('hidden');
+                document.getElementById('cart-points-discount-info').classList.add('hidden');
+                const phoneEl = document.getElementById('checkout-phone');
+                if (phoneEl && !phoneEl.value) phoneEl.value = cartPointsPhone;
+                cartPointsPhone = '';
+            } else {
+                document.getElementById('points-section').classList.add('hidden');
+                document.getElementById('points-discount-info').classList.add('hidden');
+                document.getElementById('points-to-use').value = '0';
+            }
             document.getElementById('checkout-modal').classList.remove('hidden');
         }
 
@@ -109,6 +147,59 @@
                     document.getElementById('points-section').classList.add('hidden');
                 }
             });
+        }
+
+        function fetchCartCustomerPoints(phone) {
+            phone = (phone || '').trim();
+            const box = document.getElementById('cart-points-box');
+            const actions = document.getElementById('cart-points-actions');
+            const balanceEl = document.getElementById('cart-points-balance');
+            if (!phone || phone.length < 8) {
+                cartPointsPhone = '';
+                box.classList.add('hidden');
+                actions.classList.add('hidden');
+                balanceEl.textContent = '0';
+                return;
+            }
+            cartPointsPhone = phone;
+            fetch('/api/points-settings-public').then(r => r.json()).then(s => {
+                if (s.success) {
+                    pointsDiscountPerPoint = s.settings.customer_point_discount || 0.5;
+                    pointsMaxDiscountPercent = s.settings.customer_max_discount_percent || 30;
+                }
+            }).catch(function(){});
+            fetch('/api/customer-points/' + encodeURIComponent(phone)).then(r => r.json()).then(d => {
+                if (d.success && d.points > 0) {
+                    customerPoints = d.points;
+                    box.classList.remove('hidden');
+                    actions.classList.remove('hidden');
+                    balanceEl.textContent = d.points + ' نقطة';
+                    const useEl = document.getElementById('cart-points-to-use');
+                    if (useEl && pointsToUse > 0 && pointsToUse <= customerPoints) useEl.value = pointsToUse;
+                } else {
+                    box.classList.remove('hidden');
+                    actions.classList.add('hidden');
+                    balanceEl.textContent = '0';
+                }
+            }).catch(function(){
+                box.classList.remove('hidden');
+                actions.classList.add('hidden');
+                balanceEl.textContent = '0';
+            });
+        }
+
+        function applyCartPoints() {
+            const val = parseInt(document.getElementById('cart-points-to-use').value) || 0;
+            if (val <= 0 || val > customerPoints) { if (typeof CustomDialog !== 'undefined') CustomDialog.error('عدد النقاط غير صالح'); return; }
+            const cartTotal = cart.reduce(function(s, i) { return s + (parseFloat(i.amount) || 0); }, 0);
+            const maxDiscount = cartTotal * pointsMaxDiscountPercent / 100;
+            appliedPointsDiscount = Math.min(val * pointsDiscountPerPoint, maxDiscount);
+            pointsToUse = appliedPointsDiscount > 0 ? Math.min(val, Math.ceil(appliedPointsDiscount / pointsDiscountPerPoint)) : 0;
+            if (appliedPointsDiscount <= 0) { if (typeof CustomDialog !== 'undefined') CustomDialog.error('الخصم صفر، حاول مرة أخرى'); return; }
+            document.getElementById('cart-points-discount-info').classList.remove('hidden');
+            document.getElementById('cart-points-discount-amount').textContent = appliedPointsDiscount.toFixed(2);
+            renderCart();
+            if (typeof CustomDialog !== 'undefined') CustomDialog.success('تم تطبيق الخصم بنجاح!');
         }
 
         function updatePointsDiscount() {
