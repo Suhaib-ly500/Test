@@ -71,6 +71,7 @@
                 footer.classList.add('hidden'); return;
             }
             footer.classList.remove('hidden');
+            document.getElementById('cart-points-box').classList.remove('hidden');
             let total = 0;
             list.innerHTML = cart.map((item, i) => {
                 total += parseFloat(item.amount) || 0;
@@ -156,7 +157,7 @@
             const balanceEl = document.getElementById('cart-points-balance');
             if (!phone || phone.length < 8) {
                 cartPointsPhone = '';
-                box.classList.add('hidden');
+                box.classList.remove('hidden');
                 actions.classList.add('hidden');
                 balanceEl.textContent = '0';
                 return;
