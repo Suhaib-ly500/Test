@@ -57,6 +57,16 @@ async function processHTML(inputPath, outputPath) {
   let html = fs.readFileSync(inputPath, 'utf8');
   console.log(`  📄 ${path.basename(inputPath)} → تعمية + تصغير...`);
 
+  // تضمين سكربتات js/ الخارجية (المُعمّاة مسبقاً) داخل HTML ليكون dist مستقلًا
+  const externalSrcRegex = /<script\b[^>]*\bsrc="\/js\/([^"?]+)(?:\?[^"]*)?"[^>]*><\/script>/g;
+  html = html.replace(externalSrcRegex, (m, file) => {
+    const jsPath = path.join(SRC, 'js', file);
+    if (fs.existsSync(jsPath)) {
+      return '<script data-built="1">' + fs.readFileSync(jsPath, 'utf8') + '</script>';
+    }
+    return m;
+  });
+
   // استخراج كل <script> blocks
   const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
   let match;
@@ -64,8 +74,8 @@ async function processHTML(inputPath, outputPath) {
     const originalScript = match[1].trim();
     if (!originalScript) continue;
 
-    // تجاهل السكربتات التي تستورد من مصادر خارجية
-    if (match[0].includes('src=')) continue;
+    // تجاهل السكربتات التي تستورد من مصادر خارجية أو المُضمّنة والمعمّاة مسبقاً
+    if (match[0].includes('src=') || /data-built="1"/.test(match[0])) continue;
 
     try {
       const obfuscated = JavaScriptObfuscator.obfuscate(originalScript, {
